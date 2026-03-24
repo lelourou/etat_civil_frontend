@@ -306,7 +306,7 @@ export class ActeDetailComponent implements OnInit {
       type_copie:    v.type_copie!,
       canal:         v.canal!,
     };
-    this.paiementsSvc.creerDemande(payload).subscribe({
+    this.paiementsSvc.creerDemande(payload as any).subscribe({
       next: (d) => {
         // Confirmer paiement immédiatement si guichet
         if (v.canal === 'GUICHET') {

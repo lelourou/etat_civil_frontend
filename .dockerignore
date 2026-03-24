@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.git
+.gitignore
+.DS_Store
+karma.conf.js
+*.spec.ts

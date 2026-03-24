@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.etatcivil.ci/api/v1',
+  apiUrl: '/api/v1',   // chemin relatif — nginx proxie /api/ → backend:8000
 };

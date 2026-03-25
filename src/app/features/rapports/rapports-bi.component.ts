@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, inject, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -54,13 +54,12 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
   @if (loading()) {
     <div style="display:flex;flex-direction:column;align-items:center;padding:80px;gap:16px">
       <mat-spinner diameter="60"></mat-spinner>
-      <p style="color:#777">Chargement…</p>
+      <p style="color:#777">Chargement des données…</p>
     </div>
   }
 
+  <!-- KPI — masqués tant que loading -->
   @if (!loading()) {
-
-    <!-- ── KPI ─────────────────────────────────────────────── -->
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:28px">
 
       <mat-card style="background:linear-gradient(135deg,#F77F00,#e06500);color:white;cursor:pointer;border-radius:12px" (click)="nav('/actes')">
@@ -118,8 +117,15 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
       </mat-card>
 
     </div>
+  }
 
-    <!-- ── Section 1 ──────────────────────────────────────── -->
+  <!-- ═══════════════════════════════════════════════════════
+       GRAPHIQUES — canvas TOUJOURS dans le DOM (pas de @if)
+       visibility:hidden garde les dimensions → Chart.js peut mesurer
+       ═══════════════════════════════════════════════════════ -->
+  <div [style.visibility]="loading() ? 'hidden' : 'visible'">
+
+    <!-- Section 1 -->
     <div style="color:#009A44;font-weight:600;font-size:15px;border-bottom:2px solid #e8f5e9;padding-bottom:6px;margin-bottom:16px">
       Évolution temporelle &amp; Distribution
     </div>
@@ -128,92 +134,94 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
       <mat-card style="flex:2;min-width:340px">
         <mat-card-header><mat-card-title>Évolution mensuelle des actes (2020–2025)</mat-card-title></mat-card-header>
         <mat-card-content>
-          <canvas id="bi-evolution" style="width:100%"></canvas>
+          <canvas id="bi-evolution"></canvas>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:220px">
         <mat-card-header><mat-card-title>Répartition par nature</mat-card-title></mat-card-header>
         <mat-card-content>
-          <canvas id="bi-nature" style="width:100%"></canvas>
+          <canvas id="bi-nature"></canvas>
         </mat-card-content>
       </mat-card>
     </div>
 
-    <!-- ── Genre ──────────────────────────────────────────── -->
+    <!-- Genre -->
     <div style="display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap">
       <mat-card style="flex:1;min-width:200px">
         <mat-card-header><mat-card-title>Individus par genre</mat-card-title></mat-card-header>
         <mat-card-content>
-          <canvas id="bi-genre-ind" style="width:100%"></canvas>
+          <canvas id="bi-genre-ind"></canvas>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:200px">
         <mat-card-header><mat-card-title>Naissances par genre</mat-card-title></mat-card-header>
         <mat-card-content>
-          <canvas id="bi-genre-nai" style="width:100%"></canvas>
+          <canvas id="bi-genre-nai"></canvas>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:200px">
         <mat-card-header><mat-card-title>Décès par genre</mat-card-title></mat-card-header>
         <mat-card-content>
-          <canvas id="bi-genre-dec" style="width:100%"></canvas>
+          <canvas id="bi-genre-dec"></canvas>
         </mat-card-content>
       </mat-card>
     </div>
 
-    <!-- ── Section 2 ──────────────────────────────────────── -->
+    <!-- Section 2 -->
     <div style="color:#009A44;font-weight:600;font-size:15px;border-bottom:2px solid #e8f5e9;padding-bottom:6px;margin-bottom:16px">
       Analyse géographique
     </div>
 
     <mat-card style="margin-bottom:24px">
       <mat-card-header>
-        <mat-card-title>Top 10 centres par volume d'actes</mat-card-title>
+        <mat-card-title>Top centres par volume d'actes</mat-card-title>
         <mat-card-subtitle>Vert = Sous-Préfecture · Orange = Mairie</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-        <canvas id="bi-centres" style="width:100%"></canvas>
+        <canvas id="bi-centres"></canvas>
       </mat-card-content>
     </mat-card>
 
-    <!-- ── Tableau recettes ────────────────────────────────── -->
-    <mat-card style="margin-bottom:24px">
-      <mat-card-header><mat-card-title>Recettes par centre (FCFA)</mat-card-title></mat-card-header>
-      <mat-card-content>
-        <table mat-table [dataSource]="recettes()" style="width:100%">
-          <ng-container matColumnDef="rang">
-            <th mat-header-cell *matHeaderCellDef>#</th>
-            <td mat-cell *matCellDef="let r; let i = index">{{ i+1 }}</td>
-          </ng-container>
-          <ng-container matColumnDef="centre">
-            <th mat-header-cell *matHeaderCellDef>Centre</th>
-            <td mat-cell *matCellDef="let r">{{ r.centre_nom }}</td>
-          </ng-container>
-          <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef>Type</th>
-            <td mat-cell *matCellDef="let r">
-              <span [style.background]="r.centre_type==='SOUS_PREFECTURE'?'#e8f5e9':'#e3f2fd'"
-                    [style.color]="r.centre_type==='SOUS_PREFECTURE'?'#2e7d32':'#1565C0'"
-                    style="padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500">
-                {{ r.centre_type === 'SOUS_PREFECTURE' ? 'Sous-Préf.' : 'Mairie' }}
-              </span>
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="nb">
-            <th mat-header-cell *matHeaderCellDef>Paiements</th>
-            <td mat-cell *matCellDef="let r">{{ r.nb_paiements | number }}</td>
-          </ng-container>
-          <ng-container matColumnDef="total">
-            <th mat-header-cell *matHeaderCellDef>Total (FCFA)</th>
-            <td mat-cell *matCellDef="let r" style="font-weight:700;color:#009A44">{{ r.total | number:'1.0-0' }}</td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="recCols"></tr>
-          <tr mat-row *matRowDef="let row; columns: recCols;"></tr>
-        </table>
-      </mat-card-content>
-    </mat-card>
+    <!-- Tableau recettes -->
+    @if (!loading()) {
+      <mat-card style="margin-bottom:24px">
+        <mat-card-header><mat-card-title>Recettes par centre (FCFA)</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <table mat-table [dataSource]="recettes()" style="width:100%">
+            <ng-container matColumnDef="rang">
+              <th mat-header-cell *matHeaderCellDef>#</th>
+              <td mat-cell *matCellDef="let r; let i = index">{{ i+1 }}</td>
+            </ng-container>
+            <ng-container matColumnDef="centre">
+              <th mat-header-cell *matHeaderCellDef>Centre</th>
+              <td mat-cell *matCellDef="let r">{{ r.centre_nom }}</td>
+            </ng-container>
+            <ng-container matColumnDef="type">
+              <th mat-header-cell *matHeaderCellDef>Type</th>
+              <td mat-cell *matCellDef="let r">
+                <span [style.background]="r.centre_type==='SOUS_PREFECTURE'?'#e8f5e9':'#e3f2fd'"
+                      [style.color]="r.centre_type==='SOUS_PREFECTURE'?'#2e7d32':'#1565C0'"
+                      style="padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500">
+                  {{ r.centre_type === 'SOUS_PREFECTURE' ? 'Sous-Préf.' : 'Mairie' }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="nb">
+              <th mat-header-cell *matHeaderCellDef>Paiements</th>
+              <td mat-cell *matCellDef="let r">{{ r.nb_paiements | number }}</td>
+            </ng-container>
+            <ng-container matColumnDef="total">
+              <th mat-header-cell *matHeaderCellDef>Total (FCFA)</th>
+              <td mat-cell *matCellDef="let r" style="font-weight:700;color:#009A44">{{ r.total | number:'1.0-0' }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="recCols"></tr>
+            <tr mat-row *matRowDef="let row; columns: recCols;"></tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+    }
 
-    <!-- ── Section 3 ──────────────────────────────────────── -->
+    <!-- Section 3 -->
     <div style="color:#009A44;font-weight:600;font-size:15px;border-bottom:2px solid #e8f5e9;padding-bottom:6px;margin-bottom:16px">
       Analyse des paiements
     </div>
@@ -225,7 +233,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
           <mat-card-subtitle>Guichet vs En ligne</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <canvas id="bi-canal" style="width:100%"></canvas>
+          <canvas id="bi-canal"></canvas>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:260px">
@@ -234,12 +242,13 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
           <mat-card-subtitle>Espèces vs Mobile Money</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <canvas id="bi-moyen" style="width:100%"></canvas>
+          <canvas id="bi-moyen"></canvas>
         </mat-card-content>
       </mat-card>
     </div>
 
-  } <!-- fin @if (!loading()) -->
+  </div><!-- fin zone graphiques -->
+
 </div>
   `,
   styles: [`
@@ -248,9 +257,10 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
     tr.mat-mdc-row:hover { background: #f5f5f5; }
   `],
 })
-export class RapportsBiComponent implements OnInit, OnDestroy {
+export class RapportsBiComponent implements OnInit, AfterViewInit, OnDestroy {
   private svc    = inject(RapportsService);
   private router = inject(Router);
+  private cdr    = inject(ChangeDetectorRef);
 
   loading  = signal(true);
   kpi      = signal<SyntheseKPI | null>(null);
@@ -263,6 +273,10 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
   private natureData:    { nature: string; count: number }[] = [];
   private genreData:     GenreStats | null                   = null;
   private charts:        Chart[]                             = [];
+
+  // Drapeaux pour synchroniser vue Angular et données API
+  private viewReady = false;
+  private dataReady = false;
 
   tauxValidation() {
     const k = this.kpi();
@@ -289,12 +303,18 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
         this.natureData    = d.nature;
         this.genreData     = d.genre;
         this.loading.set(false);
-
-        // Attendre qu'Angular rende @if(!loading()), puis dessiner
-        setTimeout(() => this.drawAll(), 300);
+        this.cdr.detectChanges();   // force la mise à jour du signal loading
+        this.dataReady = true;
+        if (this.viewReady) this.drawAll();
       },
-      error: () => this.loading.set(false),
+      error: () => { this.loading.set(false); this.cdr.detectChanges(); },
     });
+  }
+
+  ngAfterViewInit() {
+    // Vue initialisée → canvas dans le DOM
+    this.viewReady = true;
+    if (this.dataReady) this.drawAll();
   }
 
   ngOnDestroy() { this.charts.forEach(c => c.destroy()); }

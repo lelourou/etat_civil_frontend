@@ -1,14 +1,10 @@
-import {
-  Component, OnInit, OnDestroy,
-  ElementRef, ViewChild, inject, signal,
-} from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   Chart,
@@ -49,7 +45,7 @@ const SEXE_LABELS: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
   imports: [
     CommonModule, DecimalPipe,
     MatCardModule, MatIconModule, MatTableModule,
-    MatProgressSpinnerModule, MatChipsModule, MatTooltipModule,
+    MatProgressSpinnerModule, MatTooltipModule,
   ],
   template: `
     <div class="bi-container">
@@ -64,7 +60,6 @@ const SEXE_LABELS: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
         </div>
       </div>
 
-      <!-- ── Spinner ─────────────────────────────────────── -->
       @if (loading()) {
         <div class="loading-center">
           <mat-spinner diameter="60"></mat-spinner>
@@ -72,10 +67,9 @@ const SEXE_LABELS: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
         </div>
       }
 
-      <!-- ── Contenu (rendu seulement quand loading=false) ── -->
       @if (!loading()) {
 
-        <!-- KPI Cards -->
+        <!-- ── KPI Cards ────────────────────────────────── -->
         <div class="kpi-grid">
           <mat-card class="kpi-card kpi-orange" (click)="nav('/actes')">
             <mat-card-content>
@@ -127,62 +121,68 @@ const SEXE_LABELS: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
           </mat-card>
         </div>
 
-        <!-- Section 1 -->
+        <!-- ── Section 1 ────────────────────────────────── -->
         <div class="section-title"><mat-icon>show_chart</mat-icon> Évolution temporelle &amp; Distribution</div>
 
         <div class="charts-row">
           <mat-card class="chart-card chart-large">
             <mat-card-header>
-              <mat-card-title><mat-icon>trending_up</mat-icon> Évolution mensuelle (2020–2025)</mat-card-title>
+              <mat-card-title>Évolution mensuelle des actes (2020–2025)</mat-card-title>
               <mat-card-subtitle>Naissances · Mariages · Décès</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content><canvas #evolutionChart></canvas></mat-card-content>
+            <mat-card-content>
+              <div class="canvas-wrap"><canvas id="bi-evolution"></canvas></div>
+            </mat-card-content>
           </mat-card>
           <mat-card class="chart-card chart-small">
             <mat-card-header>
-              <mat-card-title><mat-icon>donut_large</mat-icon> Répartition par nature</mat-card-title>
+              <mat-card-title>Répartition par nature</mat-card-title>
             </mat-card-header>
-            <mat-card-content><canvas #natureChart></canvas></mat-card-content>
+            <mat-card-content>
+              <div class="canvas-wrap"><canvas id="bi-nature"></canvas></div>
+            </mat-card-content>
           </mat-card>
         </div>
 
-        <!-- Section Genre -->
+        <!-- ── Section Genre ─────────────────────────────── -->
         <div class="charts-row">
           <mat-card class="chart-card chart-third">
-            <mat-card-header>
-              <mat-card-title><mat-icon>wc</mat-icon> Individus par genre</mat-card-title>
-            </mat-card-header>
-            <mat-card-content><canvas #genreIndividuChart></canvas></mat-card-content>
+            <mat-card-header><mat-card-title>Individus par genre</mat-card-title></mat-card-header>
+            <mat-card-content>
+              <div class="canvas-wrap"><canvas id="bi-genre-ind"></canvas></div>
+            </mat-card-content>
           </mat-card>
           <mat-card class="chart-card chart-third">
-            <mat-card-header>
-              <mat-card-title><mat-icon>child_care</mat-icon> Naissances par genre</mat-card-title>
-            </mat-card-header>
-            <mat-card-content><canvas #genreNaissanceChart></canvas></mat-card-content>
+            <mat-card-header><mat-card-title>Naissances par genre</mat-card-title></mat-card-header>
+            <mat-card-content>
+              <div class="canvas-wrap"><canvas id="bi-genre-nai"></canvas></div>
+            </mat-card-content>
           </mat-card>
           <mat-card class="chart-card chart-third">
-            <mat-card-header>
-              <mat-card-title><mat-icon>person_off</mat-icon> Décès par genre</mat-card-title>
-            </mat-card-header>
-            <mat-card-content><canvas #genreDecesChart></canvas></mat-card-content>
+            <mat-card-header><mat-card-title>Décès par genre</mat-card-title></mat-card-header>
+            <mat-card-content>
+              <div class="canvas-wrap"><canvas id="bi-genre-dec"></canvas></div>
+            </mat-card-content>
           </mat-card>
         </div>
 
-        <!-- Section 2 -->
+        <!-- ── Section 2 ────────────────────────────────── -->
         <div class="section-title"><mat-icon>location_city</mat-icon> Analyse géographique</div>
 
         <mat-card class="chart-card chart-full">
           <mat-card-header>
-            <mat-card-title><mat-icon>bar_chart</mat-icon> Top 10 centres par volume d'actes</mat-card-title>
-            <mat-card-subtitle>Gradient urbain → rural (vert = Sous-Préfecture, orange = Mairie)</mat-card-subtitle>
+            <mat-card-title>Top 10 centres par volume d'actes</mat-card-title>
+            <mat-card-subtitle>Vert = Sous-Préfecture · Orange = Mairie</mat-card-subtitle>
           </mat-card-header>
-          <mat-card-content><canvas #centreChart></canvas></mat-card-content>
+          <mat-card-content>
+            <div class="canvas-wrap canvas-wide"><canvas id="bi-centres"></canvas></div>
+          </mat-card-content>
         </mat-card>
 
-        <!-- Tableau recettes -->
+        <!-- ── Tableau recettes ──────────────────────────── -->
         <mat-card class="table-card">
           <mat-card-header>
-            <mat-card-title><mat-icon>account_balance_wallet</mat-icon> Recettes par centre (FCFA)</mat-card-title>
+            <mat-card-title>Recettes par centre (FCFA)</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             <table mat-table [dataSource]="recettes()" class="full-width">
@@ -216,23 +216,27 @@ const SEXE_LABELS: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
           </mat-card-content>
         </mat-card>
 
-        <!-- Section 3 -->
+        <!-- ── Section 3 ────────────────────────────────── -->
         <div class="section-title"><mat-icon>payments</mat-icon> Analyse des paiements</div>
 
         <div class="charts-row">
           <mat-card class="chart-card chart-half">
             <mat-card-header>
-              <mat-card-title><mat-icon>swap_horiz</mat-icon> Demandes par canal</mat-card-title>
+              <mat-card-title>Demandes par canal</mat-card-title>
               <mat-card-subtitle>Guichet vs En ligne</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content><canvas #canalChart></canvas></mat-card-content>
+            <mat-card-content>
+              <div class="canvas-wrap"><canvas id="bi-canal"></canvas></div>
+            </mat-card-content>
           </mat-card>
           <mat-card class="chart-card chart-half">
             <mat-card-header>
-              <mat-card-title><mat-icon>mobile_friendly</mat-icon> Paiements par moyen</mat-card-title>
+              <mat-card-title>Paiements par moyen</mat-card-title>
               <mat-card-subtitle>Espèces vs Mobile Money</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content><canvas #moyenChart></canvas></mat-card-content>
+            <mat-card-content>
+              <div class="canvas-wrap"><canvas id="bi-moyen"></canvas></div>
+            </mat-card-content>
           </mat-card>
         </div>
 
@@ -242,30 +246,32 @@ const SEXE_LABELS: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
   styles: [`
     .bi-container { padding: 8px 4px; }
     .page-header  { display:flex; justify-content:space-between; align-items:center;
-                    margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+                    margin-bottom:24px; }
     .page-title   { display:flex; align-items:center; gap:12px; }
     .page-title mat-icon { font-size:40px; width:40px; height:40px; color:#F77F00; }
     .page-title h2 { margin:0; font-size:22px; font-weight:700; color:#333; }
     .subtitle { font-size:13px; color:#777; }
+
     .section-title { display:flex; align-items:center; gap:8px; font-size:15px;
                      font-weight:600; color:#009A44; margin:8px 0 16px;
                      padding-bottom:6px; border-bottom:2px solid #e8f5e9; }
+
     .loading-center { display:flex; flex-direction:column; align-items:center;
                       padding:80px; gap:16px; color:#777; }
 
     /* KPI */
-    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(185px,1fr));
                 gap:16px; margin-bottom:28px; }
     .kpi-card { border-radius:12px !important; cursor:pointer;
                 transition:transform .15s, box-shadow .15s; }
     .kpi-card:hover { transform:translateY(-3px);
                       box-shadow:0 8px 20px rgba(0,0,0,.2) !important; }
     .kpi-card mat-card-content { display:flex; flex-direction:column; align-items:center;
-                                  padding:18px 12px !important; gap:6px; }
-    .kpi-card mat-icon { font-size:38px; width:38px; height:38px; opacity:.9; }
-    .kpi-value { font-size:24px; font-weight:800; line-height:1; }
+                                  padding:18px 12px !important; gap:5px; }
+    .kpi-card mat-icon { font-size:36px; width:36px; height:36px; opacity:.9; }
+    .kpi-value { font-size:22px; font-weight:800; line-height:1.1; }
     .kpi-label { font-size:12px; opacity:.88; text-align:center; font-weight:500; }
-    .kpi-sub   { font-size:11px; opacity:.75; text-align:center; }
+    .kpi-sub   { font-size:11px; opacity:.72; text-align:center; }
     .kpi-orange { background:linear-gradient(135deg,#F77F00,#e06500) !important; color:white !important; }
     .kpi-green  { background:linear-gradient(135deg,#009A44,#007a36) !important; color:white !important; }
     .kpi-blue   { background:linear-gradient(135deg,#1565C0,#0d47a1) !important; color:white !important; }
@@ -273,17 +279,19 @@ const SEXE_LABELS: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
     .kpi-teal   { background:linear-gradient(135deg,#00796B,#00574b) !important; color:white !important; }
     .kpi-red    { background:linear-gradient(135deg,#C62828,#a11010) !important; color:white !important; }
 
-    /* Charts */
+    /* Charts layout */
     .charts-row { display:flex; gap:16px; margin-bottom:24px; flex-wrap:wrap; }
     .chart-card { margin-bottom:24px; border-radius:10px !important; }
-    .chart-large { flex:2; min-width:380px; }
-    .chart-small { flex:1; min-width:240px; }
-    .chart-third { flex:1; min-width:220px; }
-    .chart-half  { flex:1; min-width:280px; }
+    .chart-large { flex:2; min-width:360px; }
+    .chart-small { flex:1; min-width:220px; }
+    .chart-third { flex:1; min-width:200px; }
+    .chart-half  { flex:1; min-width:260px; }
     .chart-full  { width:100%; box-sizing:border-box; }
-    mat-card-content canvas { width:100% !important; }
-    mat-card-title { display:flex !important; align-items:center; gap:6px; font-size:14px !important; }
-    mat-card-title mat-icon { font-size:18px; width:18px; height:18px; color:#F77F00; }
+
+    /* Canvas wrapper — dimensionne le canvas avant que Chart.js le lise */
+    .canvas-wrap       { position:relative; width:100%; height:280px; }
+    .canvas-wrap canvas { position:absolute; inset:0; }
+    .canvas-wide       { height:320px; }
 
     /* Table */
     .table-card { margin-bottom:24px; }
@@ -299,28 +307,18 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
   private svc    = inject(RapportsService);
   private router = inject(Router);
 
-  @ViewChild('evolutionChart')      evolutionRef!:      ElementRef<HTMLCanvasElement>;
-  @ViewChild('natureChart')         natureRef!:         ElementRef<HTMLCanvasElement>;
-  @ViewChild('centreChart')         centreRef!:         ElementRef<HTMLCanvasElement>;
-  @ViewChild('canalChart')          canalRef!:          ElementRef<HTMLCanvasElement>;
-  @ViewChild('moyenChart')          moyenRef!:          ElementRef<HTMLCanvasElement>;
-  @ViewChild('genreIndividuChart')  genreIndividuRef!:  ElementRef<HTMLCanvasElement>;
-  @ViewChild('genreNaissanceChart') genreNaissanceRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('genreDecesChart')     genreDecesRef!:     ElementRef<HTMLCanvasElement>;
-
   loading  = signal(true);
   kpi      = signal<SyntheseKPI | null>(null);
   recettes = signal<RecettesCentre[]>([]);
   recCols  = ['rang', 'centre', 'type', 'nb', 'total'];
 
-  private evolutionData: EvolutionMensuelle[] = [];
-  private centreData:    ActesParCentre[]     = [];
-  private canalData:     PaiementsCanal | null = null;
+  private evolutionData: EvolutionMensuelle[]                = [];
+  private centreData:    ActesParCentre[]                    = [];
+  private canalData:     PaiementsCanal | null               = null;
   private natureData:    { nature: string; count: number }[] = [];
-  private genreData:     GenreStats | null = null;
-  private charts:        Chart[]           = [];
+  private genreData:     GenreStats | null                   = null;
+  private charts:        Chart[]                             = [];
 
-  totalActes()     { return this.kpi()?.total_actes ?? 0; }
   tauxValidation() {
     const k = this.kpi();
     return (!k || !k.total_actes) ? 0 : Math.round(k.actes_valides / k.total_actes * 100);
@@ -345,13 +343,11 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
         this.canalData     = data.canal;
         this.natureData    = data.nature;
         this.genreData     = data.genre;
-
-        // Mettre loading à false → Angular rend les @if(!loading()) avec les canvas
         this.loading.set(false);
 
-        // setTimeout(0) : attend que Angular ait fini le cycle de rendu
-        // puis requestAnimationFrame : attend que le navigateur ait peint le DOM
-        setTimeout(() => requestAnimationFrame(() => this.drawAllCharts()), 0);
+        // Attendre qu'Angular rende @if(!loading()) puis que le navigateur peigne
+        // avant de dessiner les graphiques sur les canvas
+        setTimeout(() => this.drawAllCharts(), 100);
       },
       error: () => this.loading.set(false),
     });
@@ -359,14 +355,17 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.charts.forEach(c => c.destroy());
+    this.charts = [];
   }
 
-  private make(el: HTMLCanvasElement | undefined, config: any): void {
-    if (!el) return;
-    const c = new Chart(el, config);
-    this.charts.push(c);
+  // ── Utilitaire : récupère le canvas par id ──────────────────────────────
+  private canvas(id: string): HTMLCanvasElement | null {
+    return document.getElementById(id) as HTMLCanvasElement | null;
   }
 
+  private add(chart: Chart) { this.charts.push(chart); }
+
+  // ── Dessin de tous les graphiques ───────────────────────────────────────
   private drawAllCharts() {
     this.drawEvolution();
     this.drawNature();
@@ -377,39 +376,39 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
   }
 
   private drawEvolution() {
-    const el = this.evolutionRef?.nativeElement;
+    const el = this.canvas('bi-evolution');
     if (!el) return;
     const months  = [...new Set(this.evolutionData.map(d => d.mois))].sort();
     const natures = ['NAISSANCE', 'MARIAGE', 'DECES'];
     const colors  = ['#F77F00', '#009A44', '#C62828'];
     const fills   = ['rgba(247,127,0,.15)', 'rgba(0,154,68,.15)', 'rgba(198,40,40,.15)'];
 
-    this.make(el, {
+    this.add(new Chart(el, {
       type: 'line',
       data: {
         labels: months,
         datasets: natures.map((nat, i) => ({
           label: NATURE_LABELS[nat],
-          data: months.map(m => (this.evolutionData.find(d => d.mois === m && d.nature === nat)?.count ?? 0)),
+          data: months.map(m => this.evolutionData.find(d => d.mois === m && d.nature === nat)?.count ?? 0),
           borderColor: colors[i], backgroundColor: fills[i],
           tension: 0.4, fill: true, pointRadius: 3,
         })),
       },
       options: {
-        responsive: true, maintainAspectRatio: true,
+        responsive: true, maintainAspectRatio: false,
         plugins: { legend: { position: 'top' } },
         scales: {
           x: { ticks: { maxRotation: 45, font: { size: 10 } } },
           y: { beginAtZero: true, ticks: { precision: 0 } },
         },
       },
-    });
+    }));
   }
 
   private drawNature() {
-    const el = this.natureRef?.nativeElement;
+    const el = this.canvas('bi-nature');
     if (!el) return;
-    this.make(el, {
+    this.add(new Chart(el, {
       type: 'doughnut',
       data: {
         labels: this.natureData.map(d => NATURE_LABELS[d.nature] ?? d.nature),
@@ -420,20 +419,20 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
         }],
       },
       options: {
-        responsive: true, maintainAspectRatio: true,
+        responsive: true, maintainAspectRatio: false,
         plugins: { legend: { position: 'bottom' } },
       },
-    });
+    }));
   }
 
   private drawCentres() {
-    const el = this.centreRef?.nativeElement;
+    const el = this.canvas('bi-centres');
     if (!el) return;
     const labels = this.centreData.map(d =>
       (d.centre__nom ?? '').replace(/Sous-Préfecture de |Sous-Préfecture d'|Mairie de |Mairie d'/g, '')
     );
     const isSP = this.centreData.map(d => d.centre__type === 'SOUS_PREFECTURE');
-    this.make(el, {
+    this.add(new Chart(el, {
       type: 'bar',
       data: {
         labels,
@@ -441,30 +440,28 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
           label: "Actes enregistrés",
           data: this.centreData.map(d => d.count),
           backgroundColor: isSP.map(sp => sp ? '#009A44' : '#F77F00'),
-          borderColor:     isSP.map(sp => sp ? '#007a36' : '#e06500'),
-          borderWidth: 1, borderRadius: 4,
+          borderRadius: 4,
         }],
       },
       options: {
-        responsive: true, maintainAspectRatio: true,
+        responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: {
             callbacks: {
               title: (items: any[]) => this.centreData[items[0].dataIndex]?.centre__nom ?? '',
-              label: (ctx: any) => ` ${ctx.parsed.y} actes`,
             },
           },
         },
         scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
       },
-    });
+    }));
   }
 
   private drawCanal() {
-    const el = this.canalRef?.nativeElement;
+    const el = this.canvas('bi-canal');
     if (!el || !this.canalData) return;
-    this.make(el, {
+    this.add(new Chart(el, {
       type: 'doughnut',
       data: {
         labels: this.canalData.par_canal.map(d => CANAL_LABELS[d.canal] ?? d.canal),
@@ -475,16 +472,16 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
         }],
       },
       options: {
-        responsive: true, maintainAspectRatio: true,
+        responsive: true, maintainAspectRatio: false,
         plugins: { legend: { position: 'bottom' } },
       },
-    });
+    }));
   }
 
   private drawMoyen() {
-    const el = this.moyenRef?.nativeElement;
+    const el = this.canvas('bi-moyen');
     if (!el || !this.canalData) return;
-    this.make(el, {
+    this.add(new Chart(el, {
       type: 'bar',
       data: {
         labels: this.canalData.par_moyen.map(d => MOYEN_LABELS[d.moyen] ?? d.moyen),
@@ -497,20 +494,21 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
       },
       options: {
         indexAxis: 'y' as const,
-        responsive: true, maintainAspectRatio: true,
+        responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
       },
-    });
+    }));
   }
 
   private drawGenre() {
     if (!this.genreData) return;
     const COLORS = ['#1565C0', '#E91E63'];
 
-    const makePie = (ref: ElementRef<HTMLCanvasElement> | undefined, data: { sexe: string; count: number }[]) => {
-      if (!ref?.nativeElement) return;
-      this.make(ref.nativeElement, {
+    const makePie = (id: string, data: { sexe: string; count: number }[]) => {
+      const el = this.canvas(id);
+      if (!el || !data.length) return;
+      this.add(new Chart(el, {
         type: 'doughnut',
         data: {
           labels: data.map(d => SEXE_LABELS[d.sexe] ?? d.sexe),
@@ -521,14 +519,14 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
           }],
         },
         options: {
-          responsive: true, maintainAspectRatio: true,
+          responsive: true, maintainAspectRatio: false,
           plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
         },
-      });
+      }));
     };
 
-    makePie(this.genreIndividuRef,  this.genreData.individus_par_sexe);
-    makePie(this.genreNaissanceRef, this.genreData.naissances_par_sexe);
-    makePie(this.genreDecesRef,     this.genreData.deces_par_sexe);
+    makePie('bi-genre-ind', this.genreData.individus_par_sexe);
+    makePie('bi-genre-nai', this.genreData.naissances_par_sexe);
+    makePie('bi-genre-dec', this.genreData.deces_par_sexe);
   }
 }

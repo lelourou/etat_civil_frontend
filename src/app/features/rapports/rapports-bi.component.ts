@@ -128,17 +128,13 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
       <mat-card style="flex:2;min-width:340px">
         <mat-card-header><mat-card-title>Évolution mensuelle des actes (2020–2025)</mat-card-title></mat-card-header>
         <mat-card-content>
-          <div style="position:relative;height:280px">
-            <canvas id="bi-evolution"></canvas>
-          </div>
+          <canvas id="bi-evolution" style="width:100%"></canvas>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:220px">
         <mat-card-header><mat-card-title>Répartition par nature</mat-card-title></mat-card-header>
         <mat-card-content>
-          <div style="position:relative;height:280px">
-            <canvas id="bi-nature"></canvas>
-          </div>
+          <canvas id="bi-nature" style="width:100%"></canvas>
         </mat-card-content>
       </mat-card>
     </div>
@@ -148,25 +144,19 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
       <mat-card style="flex:1;min-width:200px">
         <mat-card-header><mat-card-title>Individus par genre</mat-card-title></mat-card-header>
         <mat-card-content>
-          <div style="position:relative;height:240px">
-            <canvas id="bi-genre-ind"></canvas>
-          </div>
+          <canvas id="bi-genre-ind" style="width:100%"></canvas>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:200px">
         <mat-card-header><mat-card-title>Naissances par genre</mat-card-title></mat-card-header>
         <mat-card-content>
-          <div style="position:relative;height:240px">
-            <canvas id="bi-genre-nai"></canvas>
-          </div>
+          <canvas id="bi-genre-nai" style="width:100%"></canvas>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:200px">
         <mat-card-header><mat-card-title>Décès par genre</mat-card-title></mat-card-header>
         <mat-card-content>
-          <div style="position:relative;height:240px">
-            <canvas id="bi-genre-dec"></canvas>
-          </div>
+          <canvas id="bi-genre-dec" style="width:100%"></canvas>
         </mat-card-content>
       </mat-card>
     </div>
@@ -182,9 +172,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
         <mat-card-subtitle>Vert = Sous-Préfecture · Orange = Mairie</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-        <div style="position:relative;height:320px">
-          <canvas id="bi-centres"></canvas>
-        </div>
+        <canvas id="bi-centres" style="width:100%"></canvas>
       </mat-card-content>
     </mat-card>
 
@@ -237,9 +225,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
           <mat-card-subtitle>Guichet vs En ligne</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div style="position:relative;height:260px">
-            <canvas id="bi-canal"></canvas>
-          </div>
+          <canvas id="bi-canal" style="width:100%"></canvas>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:260px">
@@ -248,9 +234,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
           <mat-card-subtitle>Espèces vs Mobile Money</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div style="position:relative;height:260px">
-            <canvas id="bi-moyen"></canvas>
-          </div>
+          <canvas id="bi-moyen" style="width:100%"></canvas>
         </mat-card-content>
       </mat-card>
     </div>
@@ -344,7 +328,7 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
         })),
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: true, aspectRatio: 2.5,
         plugins: { legend: { position: 'top' } },
         scales: { x: { ticks: { maxRotation: 45, font: { size: 10 } } }, y: { beginAtZero: true } },
       },
@@ -360,7 +344,7 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
         datasets: [{ data: this.natureData.map(d => d.count),
           backgroundColor: ['#F77F00','#009A44','#C62828'], borderWidth: 2, borderColor: '#fff', hoverOffset: 8 }],
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } },
+      options: { responsive: true, maintainAspectRatio: true, aspectRatio: 1.4, plugins: { legend: { position: 'bottom' } } },
     }));
   }
 
@@ -377,7 +361,7 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
           backgroundColor: this.centreData.map(d => d.centre__type==='SOUS_PREFECTURE' ? '#009A44' : '#F77F00') }],
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: true, aspectRatio: 2.2,
         plugins: { legend: { display: false },
           tooltip: { callbacks: { title: (i: any[]) => this.centreData[i[0].dataIndex]?.centre__nom ?? '' } } },
         scales: { y: { beginAtZero: true } },
@@ -394,7 +378,7 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
         datasets: [{ data: this.canalData.par_canal.map(d => d.count),
           backgroundColor: ['#F77F00','#009A44'], borderWidth: 2, borderColor: '#fff', hoverOffset: 8 }],
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } },
+      options: { responsive: true, maintainAspectRatio: true, aspectRatio: 1.4, plugins: { legend: { position: 'bottom' } } },
     }));
   }
 
@@ -409,7 +393,7 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
           backgroundColor: ['#009A44','#F77F00','#FF6F00','#1565C0','#7B1FA2'] }],
       },
       options: {
-        indexAxis: 'y' as const, responsive: true, maintainAspectRatio: false,
+        indexAxis: 'y' as const, responsive: true, maintainAspectRatio: true, aspectRatio: 1.8,
         plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } },
       },
     }));
@@ -427,7 +411,7 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
           datasets: [{ data: data.map(d => d.count),
             backgroundColor: COLORS, borderWidth: 2, borderColor: '#fff', hoverOffset: 8 }],
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } },
+        options: { responsive: true, maintainAspectRatio: true, aspectRatio: 1.4, plugins: { legend: { position: 'bottom' } } },
       }));
     };
     pie('bi-genre-ind', this.genreData.individus_par_sexe);

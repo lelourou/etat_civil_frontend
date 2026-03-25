@@ -3,9 +3,11 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ActesService } from '../../core/services/actes.service';
 import { NotificationsService } from '../../core/services/notifications.service';
+import { PaiementsService } from '../../core/services/paiements.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -89,17 +91,23 @@ export class DashboardComponent implements OnInit {
     public auth: AuthService,
     private actes: ActesService,
     private notifs: NotificationsService,
+    private paiements: PaiementsService,
   ) {}
 
   ngOnInit() {
-    this.actes.liste({ statut: 'BROUILLON' }).subscribe(r =>
+    forkJoin({
+      brouillons: this.actes.liste({ statut: 'BROUILLON' }),
+      total:      this.actes.liste({}),
+      copies:     this.paiements.liste({ statut: 'DELIVREE' }),
+      notifs:     this.notifs.liste({ statut: 'EN_ATTENTE' }),
+    }).subscribe(r => {
+      this.notifCount.set(r.notifs.count);
       this.stats.set([
-        { label: 'Actes en brouillon',  value: r.count, icon: 'edit_note',    color: '#F77F00', link: '/actes?statut=BROUILLON' },
-        { label: 'Total actes',          value: 0,       icon: 'description',  color: '#009A44', link: '/actes' },
-        { label: 'Copies délivrées',     value: 0,       icon: 'file_copy',    color: '#E86500', link: '/paiements' },
-        { label: 'Notifications',        value: 0,       icon: 'notifications', color: '#007A35', link: '/notifications' },
-      ])
-    );
-    this.notifs.liste({ statut: 'EN_ATTENTE' }).subscribe(r => this.notifCount.set(r.count));
+        { label: 'Total actes',         value: r.total.count,      icon: 'description',   color: '#009A44', link: '/actes' },
+        { label: 'Actes en brouillon',  value: r.brouillons.count, icon: 'edit_note',     color: '#F77F00', link: '/actes' },
+        { label: 'Copies délivrées',    value: r.copies.count,     icon: 'file_copy',     color: '#1565C0', link: '/paiements' },
+        { label: 'Notifications',       value: r.notifs.count,     icon: 'notifications', color: '#007A35', link: '/notifications' },
+      ]);
+    });
   }
 }

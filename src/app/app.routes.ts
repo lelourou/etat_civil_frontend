@@ -42,6 +42,11 @@ export const routes: Routes = [
         path: 'notifications',
         loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.notificationsRoutes),
       },
+      {
+        path: 'rapports',
+        canActivate: [roleGuard(['SUPERVISEUR_CENTRE', 'SUPERVISEUR_NATIONAL', 'ADMIN_SYSTEME'])],
+        loadChildren: () => import('./features/rapports/rapports.routes').then(m => m.rapportsRoutes),
+      },
     ],
   },
 

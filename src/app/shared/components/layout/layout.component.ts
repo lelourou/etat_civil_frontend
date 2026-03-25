@@ -84,5 +84,6 @@ export class LayoutComponent {
     { path: '/paiements',      icon: 'payment',       label: 'Paiements & Copies' },
     { path: '/notifications',  icon: 'notifications', label: 'Notifications' },
     { path: '/centres',        icon: 'location_city', label: 'Centres' },
+    { path: '/rapports',       icon: 'bar_chart',     label: 'Rapports BI' },
   ];
 }

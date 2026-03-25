@@ -128,13 +128,17 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
       <mat-card style="flex:2;min-width:340px">
         <mat-card-header><mat-card-title>Évolution mensuelle des actes (2020–2025)</mat-card-title></mat-card-header>
         <mat-card-content>
-          <canvas id="bi-evolution" style="display:block;width:100%;height:280px"></canvas>
+          <div style="position:relative;height:280px">
+            <canvas id="bi-evolution"></canvas>
+          </div>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:220px">
         <mat-card-header><mat-card-title>Répartition par nature</mat-card-title></mat-card-header>
         <mat-card-content>
-          <canvas id="bi-nature" style="display:block;width:100%;height:280px"></canvas>
+          <div style="position:relative;height:280px">
+            <canvas id="bi-nature"></canvas>
+          </div>
         </mat-card-content>
       </mat-card>
     </div>
@@ -144,19 +148,25 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
       <mat-card style="flex:1;min-width:200px">
         <mat-card-header><mat-card-title>Individus par genre</mat-card-title></mat-card-header>
         <mat-card-content>
-          <canvas id="bi-genre-ind" style="display:block;width:100%;height:240px"></canvas>
+          <div style="position:relative;height:240px">
+            <canvas id="bi-genre-ind"></canvas>
+          </div>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:200px">
         <mat-card-header><mat-card-title>Naissances par genre</mat-card-title></mat-card-header>
         <mat-card-content>
-          <canvas id="bi-genre-nai" style="display:block;width:100%;height:240px"></canvas>
+          <div style="position:relative;height:240px">
+            <canvas id="bi-genre-nai"></canvas>
+          </div>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:200px">
         <mat-card-header><mat-card-title>Décès par genre</mat-card-title></mat-card-header>
         <mat-card-content>
-          <canvas id="bi-genre-dec" style="display:block;width:100%;height:240px"></canvas>
+          <div style="position:relative;height:240px">
+            <canvas id="bi-genre-dec"></canvas>
+          </div>
         </mat-card-content>
       </mat-card>
     </div>
@@ -172,7 +182,9 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
         <mat-card-subtitle>Vert = Sous-Préfecture · Orange = Mairie</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-        <canvas id="bi-centres" style="display:block;width:100%;height:320px"></canvas>
+        <div style="position:relative;height:320px">
+          <canvas id="bi-centres"></canvas>
+        </div>
       </mat-card-content>
     </mat-card>
 
@@ -225,7 +237,9 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
           <mat-card-subtitle>Guichet vs En ligne</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <canvas id="bi-canal" style="display:block;width:100%;height:260px"></canvas>
+          <div style="position:relative;height:260px">
+            <canvas id="bi-canal"></canvas>
+          </div>
         </mat-card-content>
       </mat-card>
       <mat-card style="flex:1;min-width:260px">
@@ -234,7 +248,9 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
           <mat-card-subtitle>Espèces vs Mobile Money</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <canvas id="bi-moyen" style="display:block;width:100%;height:260px"></canvas>
+          <div style="position:relative;height:260px">
+            <canvas id="bi-moyen"></canvas>
+          </div>
         </mat-card-content>
       </mat-card>
     </div>

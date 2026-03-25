@@ -77,7 +77,8 @@ import { NotificationsService } from '../../core/services/notifications.service'
     .action-card   { cursor: pointer; text-align: center; transition: box-shadow 0.2s; }
     .action-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     .action-card mat-card-content { flex-direction: column; gap: 8px; }
-    .action-card mat-icon { font-size: 36px; width: 36px; height: 36px; color: #1a4f7a; }
+    .action-card mat-icon { font-size: 36px; width: 36px; height: 36px; color: #F77F00; }
+    .action-card:nth-child(even) mat-icon { color: #009A44; }
   `],
 })
 export class DashboardComponent implements OnInit {
@@ -93,10 +94,10 @@ export class DashboardComponent implements OnInit {
   ngOnInit() {
     this.actes.liste({ statut: 'BROUILLON' }).subscribe(r =>
       this.stats.set([
-        { label: 'Actes en brouillon',  value: r.count, icon: 'edit_note',   color: '#ff9800', link: '/actes?statut=BROUILLON' },
-        { label: 'Total actes',          value: 0,       icon: 'description', color: '#2196f3', link: '/actes' },
-        { label: 'Copies délivrées',     value: 0,       icon: 'file_copy',   color: '#4caf50', link: '/paiements' },
-        { label: 'Notifications',        value: 0,       icon: 'notifications',color: '#9c27b0', link: '/notifications' },
+        { label: 'Actes en brouillon',  value: r.count, icon: 'edit_note',    color: '#F77F00', link: '/actes?statut=BROUILLON' },
+        { label: 'Total actes',          value: 0,       icon: 'description',  color: '#009A44', link: '/actes' },
+        { label: 'Copies délivrées',     value: 0,       icon: 'file_copy',    color: '#E86500', link: '/paiements' },
+        { label: 'Notifications',        value: 0,       icon: 'notifications', color: '#007A35', link: '/notifications' },
       ])
     );
     this.notifs.liste({ statut: 'EN_ATTENTE' }).subscribe(r => this.notifCount.set(r.count));

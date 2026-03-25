@@ -59,15 +59,19 @@ import { AuthService } from '../../../core/services/auth.service';
   `,
   styles: [`
     .sidenav-container { height: 100vh; }
-    .sidenav { width: 240px; background: #1a4f7a; color: white; }
+    .sidenav { width: 240px; background: #009A44; color: white; }
     .sidenav-header { padding: 20px 16px; display: flex; align-items: center; gap: 12px;
-                      font-size: 18px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.2); }
-    .logo-icon { font-size: 32px; width: 32px; height: 32px; }
-    .active-link { background: rgba(255,255,255,0.15) !important; }
-    mat-nav-list a { color: rgba(255,255,255,0.85) !important; }
+                      font-size: 18px; font-weight: 600;
+                      border-bottom: 1px solid rgba(255,255,255,0.25);
+                      background: rgba(0,0,0,0.12); }
+    .logo-icon { font-size: 32px; width: 32px; height: 32px; color: #F77F00; }
+    .active-link { background: rgba(247,127,0,0.25) !important;
+                   border-left: 3px solid #F77F00 !important; }
+    mat-nav-list a { color: rgba(255,255,255,0.9) !important; }
+    mat-nav-list a:hover { background: rgba(255,255,255,0.1) !important; }
     .toolbar-spacer { flex: 1 1 auto; }
     .agent-name { margin-right: 8px; font-size: 14px; }
-    .main-content { padding: 24px; }
+    .main-content { padding: 24px; background: #f9f9f9; min-height: calc(100vh - 64px); }
   `],
 })
 export class LayoutComponent {

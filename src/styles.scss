@@ -1,10 +1,11 @@
 @use '@angular/material' as mat;
 
+/* ── Palette Côte d'Ivoire : orange · blanc · vert ─────────────────────── */
 html {
   @include mat.theme((
     color: (
       theme-type: light,
-      primary: mat.$azure-palette,
+      primary: mat.$orange-palette,
       tertiary: mat.$green-palette,
     ),
     typography: Roboto,

@@ -77,12 +77,13 @@ import { AuthService } from '../../core/services/auth.service';
     .login-container {
       min-height: 100vh; display: flex;
       align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #1a4f7a 0%, #2e8b57 100%);
+      background: linear-gradient(160deg, #F77F00 0%, #ffffff 50%, #009A44 100%);
     }
-    .login-card { width: 420px; padding: 24px; }
+    .login-card { width: 420px; padding: 24px;
+                  border-top: 4px solid #F77F00; border-bottom: 4px solid #009A44; }
     .logo { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-    .logo h1 { margin: 0; font-size: 24px; color: #1a4f7a; }
-    .logo p  { margin: 0; color: #666; font-size: 14px; }
+    .logo h1 { margin: 0; font-size: 24px; color: #F77F00; }
+    .logo p  { margin: 0; color: #009A44; font-size: 14px; font-weight: 500; }
     .full-width { width: 100%; }
     .submit-btn { margin-top: 16px; height: 48px; font-size: 16px; }
     .error-msg { color: #f44336; padding: 8px; border-radius: 4px;

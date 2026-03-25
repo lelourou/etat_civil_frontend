@@ -47,6 +47,12 @@ export interface PaiementsCanal {
   par_moyen: { moyen: string; count: number; total: number }[];
 }
 
+export interface GenreStats {
+  individus_par_sexe:  { sexe: string; count: number }[];
+  naissances_par_sexe: { sexe: string; count: number }[];
+  deces_par_sexe:      { sexe: string; count: number }[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class RapportsService {
   private http = inject(HttpClient);
@@ -74,5 +80,9 @@ export class RapportsService {
 
   paiementsParCanal(): Observable<PaiementsCanal> {
     return this.http.get<PaiementsCanal>(`${this.base}/paiements-canal/`);
+  }
+
+  actesParGenre(): Observable<GenreStats> {
+    return this.http.get<GenreStats>(`${this.base}/par-genre/`);
   }
 }

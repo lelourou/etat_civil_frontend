@@ -347,7 +347,7 @@ export class RapportsBiComponent implements OnInit, OnDestroy {
 
         // Attendre qu'Angular rende @if(!loading()) puis que le navigateur peigne
         // avant de dessiner les graphiques sur les canvas
-        setTimeout(() => this.drawAllCharts(), 100);
+        setTimeout(() => this.drawAllCharts(), 300);
       },
       error: () => this.loading.set(false),
     });

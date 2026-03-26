@@ -145,33 +145,6 @@ interface StatCard { label: string; value: number; icon: string; color: string; 
           </mat-card>
         </div>
 
-        <h3 class="section-title">Actions rapides</h3>
-        <div class="actions-grid">
-          <mat-card class="action-card" routerLink="/centres/nouveau">
-            <mat-card-content>
-              <mat-icon>add_business</mat-icon>
-              <span>Créer un centre</span>
-            </mat-card-content>
-          </mat-card>
-          <mat-card class="action-card" routerLink="/utilisateurs/nouveau">
-            <mat-card-content>
-              <mat-icon>person_add</mat-icon>
-              <span>Créer un agent</span>
-            </mat-card-content>
-          </mat-card>
-          <mat-card class="action-card" routerLink="/centres">
-            <mat-card-content>
-              <mat-icon>location_city</mat-icon>
-              <span>Gérer les centres</span>
-            </mat-card-content>
-          </mat-card>
-          <mat-card class="action-card" routerLink="/utilisateurs">
-            <mat-card-content>
-              <mat-icon>manage_accounts</mat-icon>
-              <span>Gérer les agents</span>
-            </mat-card-content>
-          </mat-card>
-        </div>
       }
     </div>
   `,

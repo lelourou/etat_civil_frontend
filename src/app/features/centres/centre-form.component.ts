@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -13,13 +13,13 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { CentresService, Centre, Localite } from '../../core/services/centres.service';
+import { CentresService, Centre, Localite, Village } from '../../core/services/centres.service';
 
 @Component({
   selector: 'app-centre-form',
   standalone: true,
   imports: [
-    CommonModule, RouterLink, ReactiveFormsModule,
+    CommonModule, RouterLink, ReactiveFormsModule, FormsModule,
     MatButtonModule, MatIconModule, MatInputModule, MatFormFieldModule,
     MatSelectModule, MatProgressSpinnerModule, MatCheckboxModule,
     MatDatepickerModule, MatNativeDateModule, MatCardModule, MatSnackBarModule,
@@ -137,6 +137,23 @@ import { CentresService, Centre, Localite } from '../../core/services/centres.se
               }
             </div>
 
+            <!-- ── Villages à rattacher (création uniquement) ── -->
+            @if (!estModification) {
+              <div class="section-titre">
+                <mat-icon>add_location_alt</mat-icon>
+                Villages rattachés (optionnel)
+              </div>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Sélectionner un ou plusieurs villages</mat-label>
+                <mat-select [(ngModel)]="villagesSelectionnes" [ngModelOptions]="{standalone:true}" multiple>
+                  @for (v of villagesDisponibles(); track v.id) {
+                    <mat-option [value]="v.id">{{ v.nom }}</mat-option>
+                  }
+                </mat-select>
+                <mat-hint>Ces villages seront rattachés dès la création du centre</mat-hint>
+              </mat-form-field>
+            }
+
             <div class="form-actions">
               <button mat-stroked-button type="button" routerLink="/centres">Annuler</button>
               <button mat-raised-button color="primary" type="submit"
@@ -160,13 +177,19 @@ import { CentresService, Centre, Localite } from '../../core/services/centres.se
     .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; }
     .span-2 { grid-column:1/-1; }
     .checkbox-row { grid-column:1/-1; padding:8px 0; }
+    .section-titre { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600;
+                     color:#009A44; margin:20px 0 8px; padding-bottom:6px; border-bottom:2px solid #e8f5e9; }
+    .section-titre mat-icon { font-size:20px; width:20px; height:20px; }
+    .full-width { width:100%; }
     .form-actions { display:flex; justify-content:flex-end; gap:12px; margin-top:16px; padding-top:16px;
                     border-top:1px solid #e0e0e0; }
   `],
 })
 export class CentreFormComponent implements OnInit {
   form!: FormGroup;
-  localites     = signal<Localite[]>([]);
+  localites          = signal<Localite[]>([]);
+  villagesDisponibles = signal<Village[]>([]);
+  villagesSelectionnes: string[] = [];
   loading       = signal(false);
   saving        = signal(false);
   estModification = false;
@@ -198,6 +221,9 @@ export class CentreFormComponent implements OnInit {
     });
 
     this.chargerLocalites();
+    if (!this.estModification) {
+      this.svc.villages().subscribe(r => this.villagesDisponibles.set(r.results));
+    }
     if (this.estModification) this.chargerCentre();
   }
 
@@ -227,9 +253,10 @@ export class CentreFormComponent implements OnInit {
     this.saving.set(true);
 
     const val = this.form.getRawValue();
+    const dateCreation = this.formatDate(val.date_creation);
     const payload: Partial<Centre> = {
       ...val,
-      date_creation:  this.formatDate(val.date_creation),
+      date_creation:  dateCreation,
       date_fermeture: val.date_fermeture ? this.formatDate(val.date_fermeture) : null,
     };
 
@@ -239,12 +266,30 @@ export class CentreFormComponent implements OnInit {
 
     req$.subscribe({
       next: c => {
-        this.saving.set(false);
-        this.snack.open(
-          this.estModification ? 'Centre mis à jour.' : 'Centre créé avec succès.',
-          'OK', { duration: 3000 }
-        );
-        this.router.navigate(['/centres', c.id]);
+        // Rattacher les villages sélectionnés (création uniquement)
+        if (!this.estModification && this.villagesSelectionnes.length > 0) {
+          const rattach$ = this.villagesSelectionnes.map(vid =>
+            this.svc.rattacherVillage({ village: vid, centre: c.id, date_debut: dateCreation })
+          );
+          let done = 0;
+          rattach$.forEach(obs => obs.subscribe({
+            complete: () => {
+              done++;
+              if (done === rattach$.length) {
+                this.saving.set(false);
+                this.snack.open('Centre créé avec ' + done + ' village(s) rattaché(s).', 'OK', { duration: 3000 });
+                this.router.navigate(['/centres', c.id]);
+              }
+            },
+          }));
+        } else {
+          this.saving.set(false);
+          this.snack.open(
+            this.estModification ? 'Centre mis à jour.' : 'Centre créé avec succès.',
+            'OK', { duration: 3000 }
+          );
+          this.router.navigate(['/centres', c.id]);
+        }
       },
       error: err => {
         this.saving.set(false);

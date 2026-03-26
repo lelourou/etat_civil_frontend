@@ -110,6 +110,10 @@ export class CentresService {
     return this.http.post<VillageCourant>(`${this.url}/rattachements/`, data);
   }
 
+  retirerVillage(rattachementId: string, dateFin: string) {
+    return this.http.patch(`${this.url}/rattachements/${rattachementId}/`, { date_fin: dateFin });
+  }
+
   villages(localiteId?: string) {
     const params = localiteId ? `?localite=${localiteId}&page_size=500` : '?page_size=500';
     return this.http.get<PaginatedResponse<Village>>(`${this.urlTerr}/villages/${params}`);

@@ -31,10 +31,29 @@ import { AuthService } from '../../core/services/auth.service';
       <h2>Centres d'état civil</h2>
       @if (isAdmin()) {
         <button mat-raised-button color="primary" routerLink="nouveau">
-          <mat-icon>add</mat-icon> Nouveau centre
+          <mat-icon>add_business</mat-icon> Créer un centre
         </button>
       }
     </div>
+
+    <!-- Barre d'actions rapides (admin) -->
+    @if (isAdmin()) {
+      <div class="actions-bar">
+        <button mat-stroked-button color="primary" routerLink="nouveau" class="action-btn">
+          <mat-icon>add_business</mat-icon> Nouveau centre
+        </button>
+        @if (centreSelectionne()) {
+          <button mat-stroked-button color="accent" [routerLink]="[centreSelectionne()!.id, 'modifier']" class="action-btn">
+            <mat-icon>edit</mat-icon> Modifier « {{ centreSelectionne()!.nom }} »
+          </button>
+          <button mat-stroked-button [routerLink]="[centreSelectionne()!.id]" class="action-btn">
+            <mat-icon>visibility</mat-icon> Voir la fiche
+          </button>
+        } @else {
+          <span class="select-hint">Cliquez sur une ligne pour sélectionner un centre</span>
+        }
+      </div>
+    }
 
     <!-- Filtres -->
     <div class="filters-row">
@@ -131,7 +150,10 @@ import { AuthService } from '../../core/services/auth.service';
 
         <mat-header-row *matHeaderRowDef="colonnes"></mat-header-row>
         <mat-row *matRowDef="let row; columns: colonnes;"
-                 [class.row-ferme]="!row.actif"></mat-row>
+                 [class.row-ferme]="!row.actif"
+                 [class.row-selected]="centreSelectionne()?.id === row.id"
+                 (click)="selectionner(row)"
+                 style="cursor:pointer"></mat-row>
         <tr class="mat-row" *matNoDataRow>
           <td class="mat-cell no-data" colspan="7">Aucun centre trouvé.</td>
         </tr>
@@ -164,13 +186,20 @@ import { AuthService } from '../../core/services/auth.service';
     .badge-ferme { background:#fce4ec; color:#c62828; border-radius:10px;
                    padding:2px 10px; font-size:12px; }
     .row-ferme { opacity:0.6; }
+    .row-selected { background:#e8f5e9 !important; }
+    .actions-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+                   background:#f5f5f5; border-radius:8px; padding:10px 16px;
+                   margin-bottom:12px; border:1px solid #e0e0e0; }
+    .action-btn { font-size:13px; }
+    .select-hint { font-size:13px; color:#999; font-style:italic; }
   `],
 })
 export class CentresListComponent implements OnInit {
-  colonnes    = ['code', 'nom', 'type', 'localite', 'nb_agents', 'actif', 'actions'];
-  centres     = signal<Centre[]>([]);
-  total       = signal(0);
-  loading     = signal(false);
+  colonnes           = ['code', 'nom', 'type', 'localite', 'nb_agents', 'actif', 'actions'];
+  centres            = signal<Centre[]>([]);
+  total              = signal(0);
+  loading            = signal(false);
+  centreSelectionne  = signal<Centre | null>(null);
   pageSize    = 20;
   page        = 0;
   search      = new FormControl('');
@@ -205,7 +234,11 @@ export class CentresListComponent implements OnInit {
 
   onPage(e: PageEvent) { this.page = e.pageIndex; this.pageSize = e.pageSize; this.charger(); }
 
-  isAdmin(): boolean { return this.auth.role === 'ADMIN_SYSTEME'; }
+  selectionner(c: Centre) {
+    this.centreSelectionne.set(this.centreSelectionne()?.id === c.id ? null : c);
+  }
+
+  isAdmin(): boolean { return this.auth.role === 'ADMIN_CENTRAL'; }
 
   iconeType(type: string): string {
     return type === 'MAIRIE' ? 'location_city' : 'account_balance';

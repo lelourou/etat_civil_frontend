@@ -8,7 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ActesService } from '../../core/services/actes.service';
 import { NotificationsService } from '../../core/services/notifications.service';
 import { PaiementsService } from '../../core/services/paiements.service';
-import { CentresService } from '../../core/services/centres.service';
+import { CentresService, StatsDashboard } from '../../core/services/centres.service';
 
 interface StatCard { label: string; value: number; icon: string; color: string; link: string; }
 
@@ -73,23 +73,79 @@ interface StatCard { label: string; value: number; icon: string; color: string; 
 
       <!-- ── Dashboard ADMIN_CENTRAL ──────────────────────────────────────── -->
       @if (isAdmin()) {
+        <!-- KPIs organisationnels -->
         <div class="stats-grid">
-          @for (stat of stats(); track stat.label) {
-            <mat-card class="stat-card" [routerLink]="stat.link">
-              <mat-card-content>
-                <div class="stat-icon" [style.background]="stat.color">
-                  <mat-icon>{{ stat.icon }}</mat-icon>
-                </div>
-                <div class="stat-info">
-                  <span class="stat-value">{{ stat.value }}</span>
-                  <span class="stat-label">{{ stat.label }}</span>
-                </div>
-              </mat-card-content>
-            </mat-card>
-          }
+          <mat-card class="stat-card" routerLink="/centres">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#009A44"><mat-icon>location_city</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ adminStats()?.nb_centres ?? '…' }}</span>
+                <span class="stat-label">Total centres</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card" routerLink="/centres">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#2e7d32"><mat-icon>check_circle</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ adminStats()?.nb_centres_actifs ?? '…' }}</span>
+                <span class="stat-label">Centres actifs</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card" routerLink="/utilisateurs">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#1565C0"><mat-icon>people</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ adminStats()?.nb_agents ?? '…' }}</span>
+                <span class="stat-label">Agents actifs</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#F77F00"><mat-icon>description</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ adminStats()?.nb_actes_total ?? '…' }}</span>
+                <span class="stat-label">Total actes</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
         </div>
 
-        <h3 class="section-title">Administration</h3>
+        <!-- Actes par type -->
+        <h3 class="section-title">Actes par type</h3>
+        <div class="stats-grid actes-grid">
+          <mat-card class="stat-card acte-card">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#00796B"><mat-icon>child_care</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ adminStats()?.nb_actes_naissance ?? '…' }}</span>
+                <span class="stat-label">Naissances</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card acte-card">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#6A1B9A"><mat-icon>favorite</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ adminStats()?.nb_actes_mariage ?? '…' }}</span>
+                <span class="stat-label">Mariages</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card acte-card">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#424242"><mat-icon>sentiment_very_dissatisfied</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ adminStats()?.nb_actes_deces ?? '…' }}</span>
+                <span class="stat-label">Décès</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <h3 class="section-title">Actions rapides</h3>
         <div class="actions-grid">
           <mat-card class="action-card" routerLink="/centres/nouveau">
             <mat-card-content>
@@ -144,6 +200,7 @@ interface StatCard { label: string; value: number; icon: string; color: string; 
 export class DashboardComponent implements OnInit {
   stats      = signal<StatCard[]>([]);
   notifCount = signal(0);
+  adminStats = signal<StatsDashboard | null>(null);
 
   isAgent = () => this.auth.agent()?.role === 'AGENT_CENTRE';
   isAdmin = () => this.auth.agent()?.role === 'ADMIN_CENTRAL';
@@ -176,16 +233,7 @@ export class DashboardComponent implements OnInit {
     }
 
     if (this.isAdmin()) {
-      // Statistiques globales pour l'administrateur central
-      forkJoin({
-        centres:      this.centres.liste({}),
-        centresActifs: this.centres.liste({ actif: 'true' }),
-      }).subscribe(r => {
-        this.stats.set([
-          { label: 'Total centres',   value: r.centres.count,      icon: 'location_city',   color: '#009A44', link: '/centres' },
-          { label: 'Centres actifs',  value: r.centresActifs.count, icon: 'check_circle',   color: '#007A35', link: '/centres' },
-        ]);
-      });
+      this.centres.stats().subscribe(s => this.adminStats.set(s));
     }
   }
 }

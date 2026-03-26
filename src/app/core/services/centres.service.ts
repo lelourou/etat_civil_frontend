@@ -46,16 +46,33 @@ export interface VillageCourant {
   decret_ref: string;
 }
 
+export interface Village {
+  id: string;
+  code: string;
+  nom: string;
+  localite: string;
+}
+
 export interface Localite {
   id: string;
   code: string;
   nom: string;
 }
 
+export interface StatsDashboard {
+  nb_centres: number;
+  nb_centres_actifs: number;
+  nb_agents: number;
+  nb_actes_naissance: number;
+  nb_actes_mariage: number;
+  nb_actes_deces: number;
+  nb_actes_total: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CentresService {
-  private readonly url      = `${environment.apiUrl}/centres`;
-  private readonly urlTerr  = `${environment.apiUrl}/territoire`;
+  private readonly url     = `${environment.apiUrl}/centres`;
+  private readonly urlTerr = `${environment.apiUrl}/territoire`;
 
   constructor(private http: HttpClient) {}
 
@@ -89,9 +106,22 @@ export class CentresService {
     return this.http.get<VillageCourant[]>(`${this.url}/${id}/villages_courants/`);
   }
 
+  rattacherVillage(data: { village: string; centre: string; date_debut: string; motif?: string; decret_ref?: string }) {
+    return this.http.post<VillageCourant>(`${this.url}/rattachements/`, data);
+  }
+
+  villages(localiteId?: string) {
+    const params = localiteId ? `?localite=${localiteId}&page_size=500` : '?page_size=500';
+    return this.http.get<PaginatedResponse<Village>>(`${this.urlTerr}/villages/${params}`);
+  }
+
   localites() {
     return this.http.get<PaginatedResponse<Localite>>(
-      `${this.urlTerr}/localites/?page_size=100`
+      `${this.urlTerr}/localites/?page_size=500`
     );
+  }
+
+  stats() {
+    return this.http.get<StatsDashboard>(`${this.url}/stats/`);
   }
 }

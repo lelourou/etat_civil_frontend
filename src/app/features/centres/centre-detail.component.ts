@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,17 +10,22 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
-import { CentresService, Centre, AgentCentre, VillageCourant } from '../../core/services/centres.service';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { CentresService, Centre, AgentCentre, VillageCourant, Village } from '../../core/services/centres.service';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-centre-detail',
   standalone: true,
   imports: [
-    CommonModule, RouterLink,
+    CommonModule, RouterLink, ReactiveFormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     MatTableModule, MatTabsModule, MatCardModule, MatTooltipModule,
-    MatDividerModule,
+    MatDividerModule, MatFormFieldModule, MatInputModule, MatSelectModule,
+    MatSnackBarModule,
   ],
   template: `
     <div class="page-header">
@@ -161,6 +167,44 @@ import { AuthService } from '../../core/services/auth.service';
             Villages <span class="tab-count">({{ villages().length }})</span>
           </ng-template>
 
+          <!-- Formulaire de rattachement (admin uniquement) -->
+          @if (isAdmin()) {
+            <mat-card class="rattach-form-card">
+              <mat-card-title>
+                <mat-icon>add_location_alt</mat-icon> Rattacher un village
+              </mat-card-title>
+              <mat-card-content>
+                <form [formGroup]="rattachForm" (ngSubmit)="rattacherVillage()" class="rattach-form">
+                  <mat-form-field>
+                    <mat-label>Village</mat-label>
+                    <mat-select formControlName="village" required>
+                      @for (v of villagesDisponibles(); track v.id) {
+                        <mat-option [value]="v.id">{{ v.nom }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field>
+                    <mat-label>Date de rattachement</mat-label>
+                    <input matInput type="date" formControlName="date_debut" required>
+                  </mat-form-field>
+                  <mat-form-field>
+                    <mat-label>Référence décret</mat-label>
+                    <input matInput formControlName="decret_ref" placeholder="Ex : Décret N°2026-001">
+                  </mat-form-field>
+                  <mat-form-field>
+                    <mat-label>Motif</mat-label>
+                    <input matInput formControlName="motif">
+                  </mat-form-field>
+                  <button mat-raised-button color="primary" type="submit"
+                          [disabled]="rattachForm.invalid || savingRattach()">
+                    <mat-icon>link</mat-icon>
+                    {{ savingRattach() ? 'Enregistrement…' : 'Rattacher' }}
+                  </button>
+                </form>
+              </mat-card-content>
+            </mat-card>
+          }
+
           @if (loadingVillages()) {
             <div class="center"><mat-spinner diameter="30"></mat-spinner></div>
           } @else {
@@ -251,18 +295,31 @@ import { AuthService } from '../../core/services/auth.service';
     .badge-superviseur_centre { background:#e3f2fd; color:#1565c0; }
     .badge-superviseur_national { background:#f3e5f5; color:#6a1b9a; }
     .badge-admin_systeme     { background:#fce4ec; color:#c62828; }
+
+    .rattach-form-card { margin-bottom:16px; }
+    .rattach-form { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; }
+    .rattach-form mat-form-field { flex:1 1 200px; }
   `],
 })
 export class CentreDetailComponent implements OnInit {
   colonnesAgents   = ['matricule', 'nom', 'role', 'email', 'telephone'];
   colonnesVillages = ['village_nom', 'date_debut', 'date_fin', 'decret_ref', 'statut'];
 
-  centre         = signal<Centre | null>(null);
-  agents         = signal<AgentCentre[]>([]);
-  villages       = signal<VillageCourant[]>([]);
-  loading        = signal(false);
-  loadingAgents  = signal(false);
-  loadingVillages = signal(false);
+  centre           = signal<Centre | null>(null);
+  agents           = signal<AgentCentre[]>([]);
+  villages         = signal<VillageCourant[]>([]);
+  villagesDisponibles = signal<Village[]>([]);
+  loading          = signal(false);
+  loadingAgents    = signal(false);
+  loadingVillages  = signal(false);
+  savingRattach    = signal(false);
+
+  rattachForm = this.fb.group({
+    village:    ['', Validators.required],
+    date_debut: ['', Validators.required],
+    decret_ref: [''],
+    motif:      [''],
+  });
 
   private id!: string;
 
@@ -270,6 +327,8 @@ export class CentreDetailComponent implements OnInit {
     private svc: CentresService,
     private auth: AuthService,
     private route: ActivatedRoute,
+    private fb: FormBuilder,
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit() {
@@ -277,6 +336,9 @@ export class CentreDetailComponent implements OnInit {
     this.chargerCentre();
     this.chargerAgents();
     this.chargerVillages();
+    if (this.isAdmin()) {
+      this.svc.villages().subscribe(r => this.villagesDisponibles.set(r.results));
+    }
   }
 
   chargerCentre() {
@@ -303,7 +365,31 @@ export class CentreDetailComponent implements OnInit {
     });
   }
 
-  isAdmin(): boolean { return this.auth.role === 'ADMIN_SYSTEME'; }
+  rattacherVillage() {
+    if (this.rattachForm.invalid) return;
+    this.savingRattach.set(true);
+    const val = this.rattachForm.value;
+    this.svc.rattacherVillage({
+      village:    val.village!,
+      centre:     this.id,
+      date_debut: val.date_debut!,
+      motif:      val.motif || undefined,
+      decret_ref: val.decret_ref || undefined,
+    }).subscribe({
+      next: () => {
+        this.savingRattach.set(false);
+        this.rattachForm.reset();
+        this.chargerVillages();
+        this.snackBar.open('Village rattaché avec succès', 'Fermer', { duration: 3000 });
+      },
+      error: (e) => {
+        this.savingRattach.set(false);
+        this.snackBar.open('Erreur : ' + JSON.stringify(e.error), 'Fermer', { duration: 5000 });
+      },
+    });
+  }
+
+  isAdmin(): boolean { return this.auth.agent()?.role === 'ADMIN_CENTRAL'; }
 
   iconeType(type: string): string {
     return type === 'MAIRIE' ? 'location_city' : 'account_balance';

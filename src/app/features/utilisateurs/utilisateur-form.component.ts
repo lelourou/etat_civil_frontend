@@ -19,7 +19,7 @@ import { environment } from '../../../environments/environment';
             MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatSlideToggleModule],
   template: `
     <div class="page-header">
-      <h2>{{ isEdit() ? 'Modifier l\'agent' : 'Créer un agent' }}</h2>
+      <h2>{{ titreFormulaire() }}</h2>
     </div>
 
     <mat-card class="form-card">
@@ -104,6 +104,8 @@ export class UtilisateurFormComponent implements OnInit {
   saving = signal(false);
   erreur = signal('');
   centres = signal<Array<{ id: string; nom: string }>>([]);
+
+  titreFormulaire = () => this.isEdit() ? "Modifier l'agent" : "Créer un agent";
 
   form = this.fb.group({
     nom:       ['', Validators.required],

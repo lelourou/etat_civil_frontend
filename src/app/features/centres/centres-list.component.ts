@@ -29,11 +29,6 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <div class="page-header">
       <h2>Centres d'état civil</h2>
-      @if (isAdmin()) {
-        <button mat-raised-button color="primary" routerLink="nouveau">
-          <mat-icon>add_business</mat-icon> Créer un centre
-        </button>
-      }
     </div>
 
     <!-- Barre d'actions rapides (admin) -->

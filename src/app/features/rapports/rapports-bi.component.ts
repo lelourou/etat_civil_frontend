@@ -1,6 +1,7 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, inject, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
@@ -62,7 +63,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
   @if (!loading()) {
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:28px">
 
-      <mat-card style="background:linear-gradient(135deg,#F77F00,#e06500);color:white;cursor:pointer;border-radius:12px" (click)="nav('/actes')">
+      <mat-card style="background:linear-gradient(135deg,#F77F00,#e06500);color:white;border-radius:12px" [style.cursor]="isAgent()?'pointer':'default'" (click)="nav('/actes')">
         <mat-card-content style="display:flex;flex-direction:column;align-items:center;padding:16px;gap:4px">
           <mat-icon style="font-size:36px;width:36px;height:36px">description</mat-icon>
           <div style="font-size:22px;font-weight:800">{{ kpi()?.total_actes | number }}</div>
@@ -71,7 +72,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
         </mat-card-content>
       </mat-card>
 
-      <mat-card style="background:linear-gradient(135deg,#009A44,#007a36);color:white;cursor:pointer;border-radius:12px" (click)="nav('/actes')">
+      <mat-card style="background:linear-gradient(135deg,#009A44,#007a36);color:white;border-radius:12px" [style.cursor]="isAgent()?'pointer':'default'" (click)="nav('/actes')">
         <mat-card-content style="display:flex;flex-direction:column;align-items:center;padding:16px;gap:4px">
           <mat-icon style="font-size:36px;width:36px;height:36px">verified</mat-icon>
           <div style="font-size:22px;font-weight:800">{{ kpi()?.actes_valides | number }}</div>
@@ -80,7 +81,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
         </mat-card-content>
       </mat-card>
 
-      <mat-card style="background:linear-gradient(135deg,#1565C0,#0d47a1);color:white;cursor:pointer;border-radius:12px" (click)="nav('/individus')">
+      <mat-card style="background:linear-gradient(135deg,#1565C0,#0d47a1);color:white;border-radius:12px" [style.cursor]="isAgent()?'pointer':'default'" (click)="nav('/individus')">
         <mat-card-content style="display:flex;flex-direction:column;align-items:center;padding:16px;gap:4px">
           <mat-icon style="font-size:36px;width:36px;height:36px">people</mat-icon>
           <div style="font-size:22px;font-weight:800">{{ kpi()?.total_individus | number }}</div>
@@ -89,7 +90,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
         </mat-card-content>
       </mat-card>
 
-      <mat-card style="background:linear-gradient(135deg,#F9A825,#f57f17);color:white;cursor:pointer;border-radius:12px" (click)="nav('/paiements')">
+      <mat-card style="background:linear-gradient(135deg,#F9A825,#f57f17);color:white;border-radius:12px" [style.cursor]="isAgent()?'pointer':'default'" (click)="nav('/paiements')">
         <mat-card-content style="display:flex;flex-direction:column;align-items:center;padding:16px;gap:4px">
           <mat-icon style="font-size:36px;width:36px;height:36px">payments</mat-icon>
           <div style="font-size:22px;font-weight:800">{{ kpi()?.total_recettes | number:'1.0-0' }}</div>
@@ -98,7 +99,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
         </mat-card-content>
       </mat-card>
 
-      <mat-card style="background:linear-gradient(135deg,#00796B,#00574b);color:white;cursor:pointer;border-radius:12px" (click)="nav('/notifications')">
+      <mat-card style="background:linear-gradient(135deg,#00796B,#00574b);color:white;border-radius:12px" [style.cursor]="isAgent()?'pointer':'default'" (click)="nav('/notifications')">
         <mat-card-content style="display:flex;flex-direction:column;align-items:center;padding:16px;gap:4px">
           <mat-icon style="font-size:36px;width:36px;height:36px">notifications_active</mat-icon>
           <div style="font-size:22px;font-weight:800">{{ kpi()?.notifs_attente | number }}</div>
@@ -107,7 +108,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
         </mat-card-content>
       </mat-card>
 
-      <mat-card style="background:linear-gradient(135deg,#C62828,#a11010);color:white;cursor:pointer;border-radius:12px" (click)="nav('/individus')">
+      <mat-card style="background:linear-gradient(135deg,#C62828,#a11010);color:white;border-radius:12px" [style.cursor]="isAgent()?'pointer':'default'" (click)="nav('/individus')">
         <mat-card-content style="display:flex;flex-direction:column;align-items:center;padding:16px;gap:4px">
           <mat-icon style="font-size:36px;width:36px;height:36px">person_off</mat-icon>
           <div style="font-size:22px;font-weight:800">{{ kpi()?.individus_deces | number }}</div>
@@ -260,6 +261,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
 export class RapportsBiComponent implements OnInit, AfterViewInit, OnDestroy {
   private svc    = inject(RapportsService);
   private router = inject(Router);
+  private auth   = inject(AuthService);
   private cdr    = inject(ChangeDetectorRef);
 
   loading  = signal(true);
@@ -282,7 +284,8 @@ export class RapportsBiComponent implements OnInit, AfterViewInit, OnDestroy {
     const k = this.kpi();
     return (!k || !k.total_actes) ? 0 : Math.round(k.actes_valides / k.total_actes * 100);
   }
-  nav(p: string) { this.router.navigate([p]); }
+  isAgent() { return this.auth.role === 'AGENT_CENTRE'; }
+  nav(p: string) { if (this.isAgent()) this.router.navigate([p]); }
 
   ngOnInit() {
     forkJoin({

@@ -317,7 +317,7 @@ export class CentreFormComponent implements OnInit {
     });
 
     this.chargerLocalites();
-    this.svc.villages().subscribe(r => this.villagesDisponibles.set(r.results));
+    this.svc.villagesLibres().subscribe(r => this.villagesDisponibles.set(r.results));
     if (this.estModification) {
       this.chargerCentre();
       this.chargerVillagesCourants();
@@ -366,6 +366,7 @@ export class CentreFormComponent implements OnInit {
         this.nvDateDebut = '';
         this.nvDecretRef = '';
         this.chargerVillagesCourants();
+        this.svc.villagesLibres().subscribe(r => this.villagesDisponibles.set(r.results));
         this.snack.open('Village rattaché avec succès.', 'OK', { duration: 3000 });
       },
       error: e => {
@@ -382,7 +383,8 @@ export class CentreFormComponent implements OnInit {
       next: () => {
         this.retirantId.set(null);
         this.chargerVillagesCourants();
-        this.snack.open('Village retiré.', 'OK', { duration: 3000 });
+        this.svc.villagesLibres().subscribe(r => this.villagesDisponibles.set(r.results));
+        this.snack.open('Village retiré. Il peut maintenant être rattaché à un autre centre.', 'OK', { duration: 4000 });
       },
       error: e => {
         this.retirantId.set(null);

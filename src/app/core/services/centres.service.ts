@@ -119,6 +119,10 @@ export class CentresService {
     return this.http.get<PaginatedResponse<Village>>(`${this.urlTerr}/villages/${params}`);
   }
 
+  villagesLibres() {
+    return this.http.get<PaginatedResponse<Village>>(`${this.url}/villages_libres/`);
+  }
+
   localites() {
     return this.http.get<PaginatedResponse<Localite>>(
       `${this.urlTerr}/localites/?page_size=500`

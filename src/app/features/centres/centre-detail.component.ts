@@ -337,7 +337,7 @@ export class CentreDetailComponent implements OnInit {
     this.chargerAgents();
     this.chargerVillages();
     if (this.isAdmin()) {
-      this.svc.villages().subscribe(r => this.villagesDisponibles.set(r.results));
+      this.svc.villagesLibres().subscribe(r => this.villagesDisponibles.set(r.results));
     }
   }
 

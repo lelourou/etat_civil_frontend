@@ -22,9 +22,10 @@ const NAV_AGENT_CENTRE: NavItem[] = [
 ];
 
 const NAV_ADMIN_CENTRAL: NavItem[] = [
-  { path: '/dashboard',     icon: 'dashboard',     label: 'Tableau de bord'   },
-  { path: '/centres',       icon: 'location_city', label: 'Centres'            },
-  { path: '/utilisateurs',  icon: 'manage_accounts', label: 'Utilisateurs'    },
+  { path: '/dashboard',     icon: 'dashboard',       label: 'Tableau de bord'   },
+  { path: '/centres',       icon: 'location_city',   label: 'Centres'            },
+  { path: '/utilisateurs',  icon: 'manage_accounts', label: 'Utilisateurs'       },
+  { path: '/rapports',      icon: 'bar_chart',       label: 'Rapports BI'        },
 ];
 
 @Component({

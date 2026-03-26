@@ -45,7 +45,7 @@ export const routes: Routes = [
       },
       {
         path: 'rapports',
-        canActivate: [roleGuard(['AGENT_CENTRE'])],
+        canActivate: [roleGuard(['AGENT_CENTRE', 'ADMIN_CENTRAL'])],
         loadChildren: () => import('./features/rapports/rapports.routes').then(m => m.rapportsRoutes),
       },
 

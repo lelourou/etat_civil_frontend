@@ -128,7 +128,7 @@ export class UtilisateurFormComponent implements OnInit {
 
   ngOnInit() {
     this.http.get<{ results: Array<{ id: string; nom: string }> }>(
-      `${environment.apiUrl}/centres/centres/?actif=true&page_size=500`
+      `${environment.apiUrl}/centres/?actif=true&page_size=500`
     ).subscribe(r => this.centres.set(r.results));
 
     const id = this.route.snapshot.paramMap.get('id');

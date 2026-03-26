@@ -56,7 +56,7 @@ export interface GenreStats {
 @Injectable({ providedIn: 'root' })
 export class RapportsService {
   private http = inject(HttpClient);
-  private base = `${environment.apiUrl}/v1/rapports`;
+  private base = `${environment.apiUrl}/rapports`;
 
   synthese(): Observable<SyntheseKPI> {
     return this.http.get<SyntheseKPI>(`${this.base}/synthese/`);

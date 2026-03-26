@@ -21,31 +21,44 @@ export const routes: Routes = [
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
       },
+
+      // ── AGENT_CENTRE uniquement ─────────────────────────────────────────
       {
         path: 'actes',
+        canActivate: [roleGuard(['AGENT_CENTRE'])],
         loadChildren: () => import('./features/actes/actes.routes').then(m => m.actesRoutes),
       },
       {
         path: 'individus',
+        canActivate: [roleGuard(['AGENT_CENTRE'])],
         loadChildren: () => import('./features/individus/individus.routes').then(m => m.individusRoutes),
       },
       {
-        path: 'centres',
-        canActivate: [roleGuard(['SUPERVISEUR_NATIONAL', 'ADMIN_SYSTEME'])],
-        loadChildren: () => import('./features/centres/centres.routes').then(m => m.centresRoutes),
-      },
-      {
         path: 'paiements',
+        canActivate: [roleGuard(['AGENT_CENTRE'])],
         loadChildren: () => import('./features/paiements/paiements.routes').then(m => m.paiementsRoutes),
       },
       {
         path: 'notifications',
+        canActivate: [roleGuard(['AGENT_CENTRE'])],
         loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.notificationsRoutes),
       },
       {
         path: 'rapports',
-        canActivate: [roleGuard(['SUPERVISEUR_CENTRE', 'SUPERVISEUR_NATIONAL', 'ADMIN_SYSTEME'])],
+        canActivate: [roleGuard(['AGENT_CENTRE'])],
         loadChildren: () => import('./features/rapports/rapports.routes').then(m => m.rapportsRoutes),
+      },
+
+      // ── ADMIN_CENTRAL uniquement ────────────────────────────────────────
+      {
+        path: 'centres',
+        canActivate: [roleGuard(['ADMIN_CENTRAL'])],
+        loadChildren: () => import('./features/centres/centres.routes').then(m => m.centresRoutes),
+      },
+      {
+        path: 'utilisateurs',
+        canActivate: [roleGuard(['ADMIN_CENTRAL'])],
+        loadChildren: () => import('./features/utilisateurs/utilisateurs.routes').then(m => m.utilisateursRoutes),
       },
     ],
   },

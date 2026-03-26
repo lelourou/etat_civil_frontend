@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -7,7 +7,25 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../../../core/services/auth.service';
+
+interface NavItem { path: string; icon: string; label: string; }
+
+const NAV_AGENT_CENTRE: NavItem[] = [
+  { path: '/dashboard',     icon: 'dashboard',     label: 'Tableau de bord'   },
+  { path: '/actes',         icon: 'description',   label: "Actes d'état civil" },
+  { path: '/individus',     icon: 'people',        label: 'Individus'          },
+  { path: '/paiements',     icon: 'payment',       label: 'Paiements & Copies' },
+  { path: '/notifications', icon: 'notifications', label: 'Notifications'      },
+  { path: '/rapports',      icon: 'bar_chart',     label: 'Rapports BI'        },
+];
+
+const NAV_ADMIN_CENTRAL: NavItem[] = [
+  { path: '/dashboard',     icon: 'dashboard',     label: 'Tableau de bord'   },
+  { path: '/centres',       icon: 'location_city', label: 'Centres'            },
+  { path: '/utilisateurs',  icon: 'manage_accounts', label: 'Utilisateurs'    },
+];
 
 @Component({
   selector: 'app-layout',
@@ -15,7 +33,7 @@ import { AuthService } from '../../../core/services/auth.service';
   imports: [
     CommonModule, RouterOutlet, RouterLink, RouterLinkActive,
     MatSidenavModule, MatToolbarModule, MatListModule,
-    MatIconModule, MatButtonModule, MatMenuModule,
+    MatIconModule, MatButtonModule, MatMenuModule, MatDividerModule,
   ],
   template: `
     <mat-sidenav-container class="sidenav-container">
@@ -24,8 +42,18 @@ import { AuthService } from '../../../core/services/auth.service';
           <mat-icon class="logo-icon">account_balance</mat-icon>
           <span>État Civil CI</span>
         </div>
+
+        <div class="role-badge">{{ auth.agent()?.role_display }}</div>
+
+        @if (auth.agent()?.centre_nom) {
+          <div class="centre-badge">
+            <mat-icon style="font-size:14px;width:14px;height:14px">location_on</mat-icon>
+            {{ auth.agent()?.centre_nom }}
+          </div>
+        }
+
         <mat-nav-list>
-          @for (item of navItems; track item.label) {
+          @for (item of navItems(); track item.label) {
             <a mat-list-item [routerLink]="item.path" routerLinkActive="active-link">
               <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
               <span matListItemTitle>{{ item.label }}</span>
@@ -65,6 +93,11 @@ import { AuthService } from '../../../core/services/auth.service';
                       border-bottom: 1px solid rgba(255,255,255,0.25);
                       background: rgba(0,0,0,0.12); }
     .logo-icon { font-size: 32px; width: 32px; height: 32px; color: #F77F00; }
+    .role-badge { margin: 10px 16px 2px; font-size: 11px; font-weight: 600;
+                  text-transform: uppercase; letter-spacing: 1px;
+                  color: rgba(255,255,255,0.6); }
+    .centre-badge { margin: 0 16px 10px; font-size: 12px; color: rgba(255,255,255,0.85);
+                    display: flex; align-items: center; gap: 4px; }
     .active-link { background: rgba(247,127,0,0.25) !important;
                    border-left: 3px solid #F77F00 !important; }
     mat-nav-list a { color: rgba(255,255,255,0.9) !important; }
@@ -75,15 +108,11 @@ import { AuthService } from '../../../core/services/auth.service';
   `],
 })
 export class LayoutComponent {
-  constructor(public auth: AuthService) {}
+  navItems = computed<NavItem[]>(() =>
+    this.auth.agent()?.role === 'ADMIN_CENTRAL'
+      ? NAV_ADMIN_CENTRAL
+      : NAV_AGENT_CENTRE
+  );
 
-  navItems = [
-    { path: '/dashboard',      icon: 'dashboard',     label: 'Tableau de bord' },
-    { path: '/actes',          icon: 'description',   label: 'Actes d\'état civil' },
-    { path: '/individus',      icon: 'people',        label: 'Individus' },
-    { path: '/paiements',      icon: 'payment',       label: 'Paiements & Copies' },
-    { path: '/notifications',  icon: 'notifications', label: 'Notifications' },
-    { path: '/centres',        icon: 'location_city', label: 'Centres' },
-    { path: '/rapports',       icon: 'bar_chart',     label: 'Rapports BI' },
-  ];
+  constructor(public auth: AuthService) {}
 }

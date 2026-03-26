@@ -15,10 +15,8 @@ export interface Agent {
 }
 
 export type AgentRole =
-  | 'AGENT_GUICHET'
-  | 'SUPERVISEUR_CENTRE'
-  | 'SUPERVISEUR_NATIONAL'
-  | 'ADMIN_SYSTEME';
+  | 'ADMIN_CENTRAL'
+  | 'AGENT_CENTRE';
 
 export interface LoginRequest {
   email: string;

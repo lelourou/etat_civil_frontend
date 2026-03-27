@@ -33,6 +33,7 @@ export interface JwtPayload {
   nom_complet: string;
   role: AgentRole;
   centre_id: string | null;
+  centre_nom: string | null;
   centre_code: string | null;
   exp: number;
 }

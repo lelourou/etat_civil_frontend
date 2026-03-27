@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActesService } from '../../core/services/actes.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Acte } from '../../core/models/acte.models';
 import { StatutBadgeComponent } from '../../shared/components/statut-badge/statut-badge.component';
 
@@ -40,6 +41,14 @@ import { StatutBadgeComponent } from '../../shared/components/statut-badge/statu
         <mat-label>Rechercher (numéro, nom, NIN...)</mat-label>
         <mat-icon matPrefix>search</mat-icon>
         <input matInput [formControl]="search">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="width:190px">
+        <mat-label>Périmètre</mat-label>
+        <mat-select [formControl]="filtreCentre">
+          <mat-option value="">Tous les centres</mat-option>
+          <mat-option value="1">Mon centre uniquement</mat-option>
+        </mat-select>
       </mat-form-field>
 
       <mat-form-field appearance="outline" style="width:180px">
@@ -90,7 +99,14 @@ import { StatutBadgeComponent } from '../../shared/components/statut-badge/statu
 
         <ng-container matColumnDef="centre">
           <mat-header-cell *matHeaderCellDef>Centre</mat-header-cell>
-          <mat-cell *matCellDef="let a">{{ a.centre_nom }}</mat-cell>
+          <mat-cell *matCellDef="let a">
+            <span [class.autre-centre]="!isMyCentre(a)">{{ a.centre_nom }}</span>
+            @if (!isMyCentre(a)) {
+              <span class="badge-autre" matTooltip="Acte d'un autre centre — consultation uniquement">
+                <mat-icon style="font-size:13px;width:13px;height:13px">lock</mat-icon> Autre centre
+              </span>
+            }
+          </mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="date">
@@ -136,6 +152,10 @@ import { StatutBadgeComponent } from '../../shared/components/statut-badge/statu
     .no-data { padding:24px; text-align:center; color:#999; }
     code { background:#f5f5f5; padding:2px 6px; border-radius:4px; font-size:11px; }
     mat-cell, mat-header-cell { padding:0 8px !important; }
+    .autre-centre { color:#888; font-size:12px; }
+    .badge-autre { display:inline-flex; align-items:center; gap:2px; margin-left:6px;
+                   background:#fff3e0; color:#e65100; font-size:10px; font-weight:600;
+                   padding:1px 6px; border-radius:10px; white-space:nowrap; }
   `],
 })
 export class ActesListComponent implements OnInit {
@@ -146,19 +166,24 @@ export class ActesListComponent implements OnInit {
   pageSize      = 20;
   page          = 0;
   search        = new FormControl('');
+  filtreCentre  = new FormControl('');
   filtreNature  = new FormControl('');
   filtreStatut  = new FormControl('');
 
-  constructor(private svc: ActesService, private route: ActivatedRoute) {}
+  constructor(
+    private svc: ActesService,
+    private route: ActivatedRoute,
+    public auth: AuthService,
+  ) {}
 
   ngOnInit() {
-    // Pré-filtre depuis query params (ex: ?statut=BROUILLON depuis dashboard)
     const params = this.route.snapshot.queryParams;
     if (params['statut']) this.filtreStatut.setValue(params['statut']);
 
     this.charger();
     this.search.valueChanges.pipe(debounceTime(400), distinctUntilChanged())
       .subscribe(() => { this.page = 0; this.charger(); });
+    this.filtreCentre.valueChanges.subscribe(() => { this.page = 0; this.charger(); });
     this.filtreNature.valueChanges.subscribe(() => { this.page = 0; this.charger(); });
     this.filtreStatut.valueChanges.subscribe(() => { this.page = 0; this.charger(); });
   }
@@ -166,14 +191,20 @@ export class ActesListComponent implements OnInit {
   charger() {
     this.loading.set(true);
     const p: Record<string, string> = { page: String(this.page + 1), page_size: String(this.pageSize) };
-    if (this.search.value)       p['search'] = this.search.value;
-    if (this.filtreNature.value) p['nature']  = this.filtreNature.value;
-    if (this.filtreStatut.value) p['statut']  = this.filtreStatut.value;
+    if (this.search.value)        p['search']     = this.search.value;
+    if (this.filtreCentre.value)  p['mon_centre'] = this.filtreCentre.value;
+    if (this.filtreNature.value)  p['nature']     = this.filtreNature.value;
+    if (this.filtreStatut.value)  p['statut']     = this.filtreStatut.value;
 
     this.svc.liste(p).subscribe({
       next: r => { this.actes.set(r.results); this.total.set(r.count); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
+  }
+
+  /** Retourne true si l'acte appartient au centre de l'agent connecté */
+  isMyCentre(acte: Acte): boolean {
+    return acte.centre === this.auth.agent()?.centre;
   }
 
   onPage(e: PageEvent) { this.page = e.pageIndex; this.pageSize = e.pageSize; this.charger(); }

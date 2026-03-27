@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Notification } from '../models/notification.models';
@@ -7,6 +7,9 @@ import { PaginatedResponse } from '../models/api.models';
 @Injectable({ providedIn: 'root' })
 export class NotificationsService {
   private readonly url = `${environment.apiUrl}/notifications`;
+
+  /** Signal partagé — mis à jour par le layout et la liste des notifs */
+  readonly pendingCount = signal(0);
 
   constructor(private http: HttpClient) {}
 
@@ -18,5 +21,12 @@ export class NotificationsService {
 
   acquitter(id: string) {
     return this.http.post<Notification>(`${this.url}/${id}/acquitter/`, {});
+  }
+
+  /** Retourne le nombre de notifications non acquittées pour le centre connecté */
+  countPending() {
+    return this.http.get<PaginatedResponse<Notification>>(
+      this.url + '/', { params: new HttpParams().set('statut', 'ENVOYEE').set('page_size', '1') }
+    );
   }
 }

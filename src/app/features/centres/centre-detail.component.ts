@@ -1,4 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { formatApiError } from '../../core/utils/api-error.utils';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -384,7 +385,7 @@ export class CentreDetailComponent implements OnInit {
       },
       error: (e) => {
         this.savingRattach.set(false);
-        this.snackBar.open('Erreur : ' + JSON.stringify(e.error), 'Fermer', { duration: 5000 });
+        this.snackBar.open(formatApiError(e.error), 'Fermer', { duration: 5000 });
       },
     });
   }

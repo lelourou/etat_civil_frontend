@@ -1,4 +1,4 @@
-import { Component, computed } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -8,17 +8,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatBadgeModule } from '@angular/material/badge';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationsService } from '../../../core/services/notifications.service';
 
 interface NavItem { path: string; icon: string; label: string; }
 
 const NAV_AGENT_CENTRE: NavItem[] = [
-  { path: '/dashboard',     icon: 'dashboard',     label: 'Tableau de bord'   },
-  { path: '/actes',         icon: 'description',   label: "Actes d'état civil" },
-  { path: '/individus',     icon: 'people',        label: 'Individus'          },
-  { path: '/paiements',     icon: 'payment',       label: 'Paiements & Copies' },
-  { path: '/notifications', icon: 'notifications', label: 'Notifications'      },
-  { path: '/rapports',      icon: 'bar_chart',     label: 'Rapports BI'        },
+  { path: '/dashboard',      icon: 'dashboard',     label: 'Tableau de bord'        },
+  { path: '/rapports',       icon: 'bar_chart',     label: 'Rapport BI'             },
+  { path: '/actes',          icon: 'description',   label: 'Actes'                  },
+  { path: '/notifications',  icon: 'notifications', label: 'Notifications'          },
 ];
 
 const NAV_ADMIN_CENTRAL: NavItem[] = [
@@ -34,7 +34,7 @@ const NAV_ADMIN_CENTRAL: NavItem[] = [
   imports: [
     CommonModule, RouterOutlet, RouterLink, RouterLinkActive,
     MatSidenavModule, MatToolbarModule, MatListModule,
-    MatIconModule, MatButtonModule, MatMenuModule, MatDividerModule,
+    MatIconModule, MatButtonModule, MatMenuModule, MatDividerModule, MatBadgeModule,
   ],
   template: `
     <mat-sidenav-container class="sidenav-container">
@@ -56,7 +56,14 @@ const NAV_ADMIN_CENTRAL: NavItem[] = [
         <mat-nav-list>
           @for (item of navItems(); track item.label) {
             <a mat-list-item [routerLink]="item.path" routerLinkActive="active-link">
-              <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+              @if (item.path === '/notifications' && notifCount() > 0) {
+                <mat-icon matListItemIcon
+                  [matBadge]="notifCount()" matBadgeColor="warn" matBadgeSize="small">
+                  {{ item.icon }}
+                </mat-icon>
+              } @else {
+                <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+              }
               <span matListItemTitle>{{ item.label }}</span>
             </a>
           }
@@ -67,6 +74,14 @@ const NAV_ADMIN_CENTRAL: NavItem[] = [
         <mat-toolbar color="primary">
           <span class="toolbar-spacer"></span>
           <span class="agent-name">{{ auth.agent()?.nom_complet }}</span>
+          @if (auth.agent()?.role === 'AGENT_CENTRE') {
+            <button mat-icon-button routerLink="/notifications"
+                    [matBadge]="notifCount() > 0 ? notifCount() : null"
+                    matBadgeColor="warn" matBadgeSize="small"
+                    matTooltip="Notifications inter-centres">
+              <mat-icon>notifications</mat-icon>
+            </button>
+          }
           <button mat-icon-button [matMenuTriggerFor]="userMenu">
             <mat-icon>account_circle</mat-icon>
           </button>
@@ -108,12 +123,27 @@ const NAV_ADMIN_CENTRAL: NavItem[] = [
     .main-content { padding: 24px; background: #f9f9f9; min-height: calc(100vh - 64px); }
   `],
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit {
   navItems = computed<NavItem[]>(() =>
     this.auth.agent()?.role === 'ADMIN_CENTRAL'
       ? NAV_ADMIN_CENTRAL
       : NAV_AGENT_CENTRE
   );
+  /** Utilise le signal partagé du service (mis à jour aussi depuis la liste) */
+  notifCount = this.notifSvc.pendingCount;
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, private notifSvc: NotificationsService) {}
+
+  ngOnInit() {
+    if (this.auth.getPayload()?.role === 'AGENT_CENTRE') {
+      this.rafraichirNotifCount();
+    }
+  }
+
+  rafraichirNotifCount() {
+    this.notifSvc.countPending().subscribe({
+      next: r => this.notifSvc.pendingCount.set(r.count),
+      error: () => {},
+    });
+  }
 }

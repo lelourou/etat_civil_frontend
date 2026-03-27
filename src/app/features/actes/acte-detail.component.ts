@@ -1,4 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { formatApiError } from '../../core/utils/api-error.utils';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -286,7 +287,7 @@ export class ActeDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loadingAction.set(false);
-        this.snack.open(e.error?.detail || 'Erreur lors de la validation', 'Fermer', { duration: 4000 });
+        this.snack.open(formatApiError(e.error), 'Fermer', { duration: 4000 });
       },
     });
   }
@@ -325,7 +326,7 @@ export class ActeDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loadingAction.set(false);
-        this.snack.open(e.error?.detail || 'Erreur', 'Fermer', { duration: 4000 });
+        this.snack.open(formatApiError(e.error), 'Fermer', { duration: 4000 });
       },
     });
   }

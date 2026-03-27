@@ -3,14 +3,9 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
-import { ActesService } from '../../core/services/actes.service';
-import { NotificationsService } from '../../core/services/notifications.service';
-import { PaiementsService } from '../../core/services/paiements.service';
 import { CentresService, StatsDashboard } from '../../core/services/centres.service';
-
-interface StatCard { label: string; value: number; icon: string; color: string; link: string; }
+import { RapportsService, SyntheseKPI } from '../../core/services/rapports.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -27,19 +22,60 @@ interface StatCard { label: string; value: number; icon: string; color: string; 
       <!-- ── Dashboard AGENT_CENTRE ───────────────────────────────────────── -->
       @if (isAgent()) {
         <div class="stats-grid">
-          @for (stat of stats(); track stat.label) {
-            <mat-card class="stat-card" [routerLink]="stat.link">
-              <mat-card-content>
-                <div class="stat-icon" [style.background]="stat.color">
-                  <mat-icon>{{ stat.icon }}</mat-icon>
-                </div>
-                <div class="stat-info">
-                  <span class="stat-value">{{ stat.value }}</span>
-                  <span class="stat-label">{{ stat.label }}</span>
-                </div>
-              </mat-card-content>
-            </mat-card>
-          }
+          <mat-card class="stat-card" routerLink="/actes">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#009A44"><mat-icon>description</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ agentKpi()?.total_actes ?? '…' }}</span>
+                <span class="stat-label">Total actes</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card" routerLink="/actes">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#00796B"><mat-icon>child_care</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ agentKpi()?.actes_naissance ?? '…' }}</span>
+                <span class="stat-label">Naissances</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card" routerLink="/actes">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#6A1B9A"><mat-icon>favorite</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ agentKpi()?.actes_mariage ?? '…' }}</span>
+                <span class="stat-label">Mariages</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card" routerLink="/actes">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#424242"><mat-icon>sentiment_very_dissatisfied</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ agentKpi()?.actes_deces ?? '…' }}</span>
+                <span class="stat-label">Décès</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card" routerLink="/actes">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#2e7d32"><mat-icon>check_circle</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ agentKpi()?.actes_valides ?? '…' }}</span>
+                <span class="stat-label">Validés</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          <mat-card class="stat-card" routerLink="/actes">
+            <mat-card-content>
+              <div class="stat-icon" style="background:#F77F00"><mat-icon>edit_note</mat-icon></div>
+              <div class="stat-info">
+                <span class="stat-value">{{ agentKpi()?.actes_brouillon ?? '…' }}</span>
+                <span class="stat-label">Brouillons</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
         </div>
 
         <h3 class="section-title">Actions rapides</h3>
@@ -47,25 +83,13 @@ interface StatCard { label: string; value: number; icon: string; color: string; 
           <mat-card class="action-card" routerLink="/actes/nouveau">
             <mat-card-content>
               <mat-icon>add_circle</mat-icon>
-              <span>Nouvel acte</span>
+              <span>Créer un acte</span>
             </mat-card-content>
           </mat-card>
-          <mat-card class="action-card" routerLink="/individus/nouveau">
+          <mat-card class="action-card" routerLink="/actes">
             <mat-card-content>
-              <mat-icon>person_add</mat-icon>
-              <span>Enregistrer individu</span>
-            </mat-card-content>
-          </mat-card>
-          <mat-card class="action-card" routerLink="/paiements">
-            <mat-card-content>
-              <mat-icon>receipt</mat-icon>
-              <span>Demande de copie</span>
-            </mat-card-content>
-          </mat-card>
-          <mat-card class="action-card" routerLink="/notifications">
-            <mat-card-content>
-              <mat-icon>notifications_active</mat-icon>
-              <span>Notifications ({{ notifCount() }})</span>
+              <mat-icon>list_alt</mat-icon>
+              <span>Mes actes</span>
             </mat-card-content>
           </mat-card>
         </div>
@@ -171,8 +195,7 @@ interface StatCard { label: string; value: number; icon: string; color: string; 
   `],
 })
 export class DashboardComponent implements OnInit {
-  stats      = signal<StatCard[]>([]);
-  notifCount = signal(0);
+  agentKpi   = signal<SyntheseKPI | null>(null);
   adminStats = signal<StatsDashboard | null>(null);
 
   isAgent = () => this.auth.agent()?.role === 'AGENT_CENTRE';
@@ -180,31 +203,14 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     public auth: AuthService,
-    private actes: ActesService,
-    private notifs: NotificationsService,
-    private paiements: PaiementsService,
+    private rapports: RapportsService,
     private centres: CentresService,
   ) {}
 
   ngOnInit() {
     if (this.isAgent()) {
-      // Statistiques filtrées sur le centre de l'agent (le backend filtre automatiquement)
-      forkJoin({
-        brouillons: this.actes.liste({ statut: 'BROUILLON' }),
-        total:      this.actes.liste({}),
-        copies:     this.paiements.liste({ statut: 'DELIVREE' }),
-        notifs:     this.notifs.liste({ statut: 'EN_ATTENTE' }),
-      }).subscribe(r => {
-        this.notifCount.set(r.notifs.count);
-        this.stats.set([
-          { label: 'Total actes',        value: r.total.count,      icon: 'description',   color: '#009A44', link: '/actes' },
-          { label: 'Actes en brouillon', value: r.brouillons.count, icon: 'edit_note',     color: '#F77F00', link: '/actes' },
-          { label: 'Copies délivrées',   value: r.copies.count,     icon: 'file_copy',     color: '#1565C0', link: '/paiements' },
-          { label: 'Notifications',      value: r.notifs.count,     icon: 'notifications', color: '#007A35', link: '/notifications' },
-        ]);
-      });
+      this.rapports.synthese().subscribe(kpi => this.agentKpi.set(kpi));
     }
-
     if (this.isAdmin()) {
       this.centres.stats().subscribe(s => this.adminStats.set(s));
     }

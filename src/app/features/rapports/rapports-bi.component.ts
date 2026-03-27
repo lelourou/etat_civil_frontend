@@ -241,6 +241,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
             </mat-card>
           </div>
 
+          @if (!isAgent()) {
           <div class="section-titre">Analyse géographique</div>
           <mat-card style="margin-bottom:24px">
             <mat-card-header>
@@ -249,6 +250,7 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
             </mat-card-header>
             <mat-card-content><canvas id="bi-centres"></canvas></mat-card-content>
           </mat-card>
+          }
 
           <mat-card style="margin-bottom:24px">
             <mat-card-header><mat-card-title>Recettes par centre (FCFA)</mat-card-title></mat-card-header>
@@ -421,6 +423,157 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
       </mat-tab>
     }
 
+    <!-- ══════════════════════════════════════
+         ONGLET 3 — IMPRESSION D'ACTES (agent)
+         ══════════════════════════════════════ -->
+    @if (isAgent()) {
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon style="margin-right:6px;font-size:18px;width:18px;height:18px">print</mat-icon>
+          Impression d'actes
+        </ng-template>
+
+        <div style="margin:16px 0">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+            <div>
+              <h3 style="margin:0;font-size:16px;font-weight:700">Liste des actes — {{ auth.agent()?.centre_nom }}</h3>
+              <span style="font-size:13px;color:#777">{{ actesImpr().length }} acte(s) chargé(s)</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button mat-stroked-button (click)="chargerActesImpr()">
+                <mat-icon>refresh</mat-icon> Actualiser
+              </button>
+              <button mat-raised-button color="primary" (click)="imprimerActes()" [disabled]="actesImpr().length===0">
+                <mat-icon>print</mat-icon> Imprimer la liste
+              </button>
+            </div>
+          </div>
+
+          @if (loadingImpr()) {
+            <div style="display:flex;justify-content:center;padding:40px">
+              <mat-spinner diameter="40"></mat-spinner>
+            </div>
+          } @else {
+            <mat-card>
+              <mat-card-content>
+                <table mat-table [dataSource]="actesImpr()" style="width:100%">
+                  <ng-container matColumnDef="num">
+                    <th mat-header-cell *matHeaderCellDef>#</th>
+                    <td mat-cell *matCellDef="let a; let i = index">{{ i+1 }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="numero">
+                    <th mat-header-cell *matHeaderCellDef>N° Acte</th>
+                    <td mat-cell *matCellDef="let a"><code>{{ a.numero_national }}</code></td>
+                  </ng-container>
+                  <ng-container matColumnDef="nature">
+                    <th mat-header-cell *matHeaderCellDef>Nature</th>
+                    <td mat-cell *matCellDef="let a">
+                      <span [class]="'badge-nature badge-' + a.nature.toLowerCase()">{{ a.nature_display }}</span>
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="individu">
+                    <th mat-header-cell *matHeaderCellDef>Individu</th>
+                    <td mat-cell *matCellDef="let a">{{ a.individu_nom }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="date">
+                    <th mat-header-cell *matHeaderCellDef>Date</th>
+                    <td mat-cell *matCellDef="let a">{{ a.date_evenement | date:'dd/MM/yyyy' }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="statut">
+                    <th mat-header-cell *matHeaderCellDef>Statut</th>
+                    <td mat-cell *matCellDef="let a">
+                      <app-statut-badge [statut]="a.statut"></app-statut-badge>
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="act">
+                    <th mat-header-cell *matHeaderCellDef></th>
+                    <td mat-cell *matCellDef="let a">
+                      <button mat-icon-button matTooltip="Imprimer cet acte" (click)="imprimerUnActe(a)">
+                        <mat-icon>print</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="imprimerActesCols"></tr>
+                  <tr mat-row *matRowDef="let row; columns: imprimerActesCols;"></tr>
+                  <tr class="mat-mdc-row" *matNoDataRow>
+                    <td colspan="7" style="text-align:center;padding:24px;color:#999">
+                      Aucun acte. Cliquez sur "Actualiser".
+                    </td>
+                  </tr>
+                </table>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+      </mat-tab>
+    }
+
+    <!-- ══════════════════════════════════════
+         ONGLET 4/2 — IMPRESSION DE RAPPORTS
+         ══════════════════════════════════════ -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon style="margin-right:6px;font-size:18px;width:18px;height:18px">summarize</mat-icon>
+        Impression de rapports
+      </ng-template>
+
+      <div style="margin:16px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px">
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:700">Rapport de synthèse</h3>
+            <span style="font-size:13px;color:#777">
+              {{ isAgent() ? (auth.agent()?.centre_nom ?? '') : 'Vue nationale — tous les centres' }}
+            </span>
+          </div>
+          <button mat-raised-button color="primary" (click)="imprimerRapport()" [disabled]="!kpi()">
+            <mat-icon>print</mat-icon> Imprimer le rapport
+          </button>
+        </div>
+
+        @if (kpi()) {
+          <!-- Aperçu du rapport -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:24px">
+
+            <mat-card>
+              <mat-card-header><mat-card-title style="font-size:14px">Actes enregistrés</mat-card-title></mat-card-header>
+              <mat-card-content>
+                <table style="width:100%;font-size:13px;border-collapse:collapse">
+                  <tr style="border-bottom:1px solid #eee"><td style="padding:6px 4px;color:#555">Total actes</td><td style="text-align:right;font-weight:700;color:#009A44">{{ kpi()!.total_actes | number }}</td></tr>
+                  <tr style="border-bottom:1px solid #eee"><td style="padding:6px 4px;color:#555">Naissances</td><td style="text-align:right;font-weight:700;color:#00796B">{{ kpi()!.actes_naissance | number }}</td></tr>
+                  <tr style="border-bottom:1px solid #eee"><td style="padding:6px 4px;color:#555">Mariages</td><td style="text-align:right;font-weight:700;color:#6A1B9A">{{ kpi()!.actes_mariage | number }}</td></tr>
+                  <tr style="border-bottom:1px solid #eee"><td style="padding:6px 4px;color:#555">Décès</td><td style="text-align:right;font-weight:700;color:#424242">{{ kpi()!.actes_deces | number }}</td></tr>
+                  <tr style="border-bottom:1px solid #eee"><td style="padding:6px 4px;color:#555">Validés</td><td style="text-align:right;font-weight:700;color:#2e7d32">{{ kpi()!.actes_valides | number }}</td></tr>
+                  <tr><td style="padding:6px 4px;color:#555">Brouillons</td><td style="text-align:right;font-weight:700;color:#F77F00">{{ kpi()!.actes_brouillon | number }}</td></tr>
+                </table>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card>
+              <mat-card-header><mat-card-title style="font-size:14px">Individus & paiements</mat-card-title></mat-card-header>
+              <mat-card-content>
+                <table style="width:100%;font-size:13px;border-collapse:collapse">
+                  <tr style="border-bottom:1px solid #eee"><td style="padding:6px 4px;color:#555">Individus enregistrés</td><td style="text-align:right;font-weight:700;color:#1565C0">{{ kpi()!.total_individus | number }}</td></tr>
+                  <tr style="border-bottom:1px solid #eee"><td style="padding:6px 4px;color:#555">Individus décédés</td><td style="text-align:right;font-weight:700;color:#424242">{{ kpi()!.individus_deces | number }}</td></tr>
+                  <tr style="border-bottom:1px solid #eee"><td style="padding:6px 4px;color:#555">Total recettes (FCFA)</td><td style="text-align:right;font-weight:700;color:#009A44">{{ kpi()!.total_recettes | number:'1.0-0' }}</td></tr>
+                  <tr style="border-bottom:1px solid #eee"><td style="padding:6px 4px;color:#555">Paiements effectués</td><td style="text-align:right;font-weight:700">{{ kpi()!.nb_paiements | number }}</td></tr>
+                  <tr style="border-bottom:1px solid #eee"><td style="padding:6px 4px;color:#555">Notifs en attente</td><td style="text-align:right;font-weight:700;color:#F77F00">{{ kpi()!.notifs_attente | number }}</td></tr>
+                  <tr><td style="padding:6px 4px;color:#555">Taux validation</td><td style="text-align:right;font-weight:700;color:#2e7d32">{{ tauxValidation() }}%</td></tr>
+                </table>
+              </mat-card-content>
+            </mat-card>
+
+          </div>
+
+          <div style="background:#f9f9f9;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;font-size:12px;color:#777">
+            <mat-icon style="font-size:16px;width:16px;height:16px;vertical-align:middle;margin-right:4px">info</mat-icon>
+            Cliquez sur <strong>Imprimer le rapport</strong> pour ouvrir le document formaté et l'imprimer ou l'enregistrer en PDF.
+          </div>
+        } @else {
+          <div style="text-align:center;padding:40px;color:#999">Données non disponibles</div>
+        }
+      </div>
+    </mat-tab>
+
   </mat-tab-group>
 
 </div>
@@ -467,13 +620,16 @@ export class RapportsBiComponent implements OnInit, AfterViewInit, OnDestroy {
   public  auth    = inject(AuthService);
   private cdr     = inject(ChangeDetectorRef);
 
-  loading      = signal(true);
-  loadingActes = signal(false);
-  kpi          = signal<SyntheseKPI | null>(null);
-  recettes     = signal<RecettesCentre[]>([]);
-  actes        = signal<Acte[]>([]);
-  recCols      = ['rang', 'centre', 'type', 'nb', 'total'];
-  actesCols    = ['numero', 'nature', 'individu', 'date', 'statut', 'actions'];
+  loading          = signal(true);
+  loadingActes     = signal(false);
+  loadingImpr      = signal(false);
+  kpi              = signal<SyntheseKPI | null>(null);
+  recettes         = signal<RecettesCentre[]>([]);
+  actes            = signal<Acte[]>([]);
+  actesImpr        = signal<Acte[]>([]);
+  recCols          = ['rang', 'centre', 'type', 'nb', 'total'];
+  actesCols        = ['numero', 'nature', 'individu', 'date', 'statut', 'actions'];
+  imprimerActesCols = ['num', 'numero', 'nature', 'individu', 'date', 'statut', 'act'];
   chartsReady  = false;
 
   private evolutionData: EvolutionMensuelle[]                = [];
@@ -559,12 +715,15 @@ export class RapportsBiComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() { this.charts.forEach(c => c.destroy()); }
 
   onTabChange(idx: number) {
-    // Redessiner les graphiques si on revient sur l'onglet Analytique
     if (idx === 0 && this.dataReady) {
       this.charts.forEach(c => c.destroy());
       this.charts = [];
       this.chartsReady = false;
       setTimeout(() => this.scheduleDrawAll(), 50);
+    }
+    // Charger tous les actes quand l'agent ouvre l'onglet "Impression d'actes" (idx 2)
+    if (this.isAgent() && idx === 2) {
+      this.chargerActesImpr();
     }
   }
 
@@ -620,10 +779,150 @@ export class RapportsBiComponent implements OnInit, AfterViewInit, OnDestroy {
     this.drawEvolution();
   }
 
+  chargerActesImpr() {
+    if (this.loadingImpr()) return;
+    this.loadingImpr.set(true);
+    this.actesSvc.liste({ page_size: '500' } as any).subscribe({
+      next: r => { this.actesImpr.set(r.results); this.loadingImpr.set(false); },
+      error: () => this.loadingImpr.set(false),
+    });
+  }
+
+  imprimerActes() {
+    const actes = this.actesImpr();
+    const centre = this.auth.agent()?.centre_nom ?? '';
+    const date = new Date().toLocaleDateString('fr-FR');
+    const rows = actes.map((a, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td><code>${a.numero_national ?? ''}</code></td>
+        <td><span class="badge ${(a.nature ?? '').toLowerCase()}">${a.nature_display ?? a.nature}</span></td>
+        <td>${a.individu_nom ?? ''}</td>
+        <td>${a.date_evenement ? new Date(a.date_evenement).toLocaleDateString('fr-FR') : ''}</td>
+        <td>${a.statut_display ?? a.statut}</td>
+      </tr>`).join('');
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Actes — ${centre}</title>
+      <style>
+        body{font-family:Arial,sans-serif;margin:30px;font-size:12px}
+        h1,h2{text-align:center;margin:4px 0}
+        h1{font-size:16px} h2{font-size:13px;font-weight:normal;color:#555}
+        .sub{text-align:center;color:#777;font-size:11px;border-bottom:2px solid #009A44;padding-bottom:8px;margin-bottom:20px}
+        table{width:100%;border-collapse:collapse}
+        th{background:#009A44;color:#fff;padding:7px 8px;text-align:left;font-size:11px}
+        td{padding:5px 8px;border-bottom:1px solid #eee}
+        tr:nth-child(even){background:#f9f9f9}
+        code{background:#f0f0f0;padding:1px 5px;border-radius:3px}
+        .badge{padding:1px 7px;border-radius:10px;font-weight:600;font-size:10px}
+        .naissance{background:#e8f5e9;color:#2e7d32}
+        .mariage{background:#f3e5f5;color:#6a1b9a}
+        .deces{background:#eee;color:#333}
+        .footer{margin-top:20px;font-size:10px;color:#aaa;text-align:right}
+      </style></head><body>
+      <h1>REPUBLIQUE DE CÔTE D'IVOIRE</h1>
+      <h2>Liste des Actes d'État Civil</h2>
+      <div class="sub">Centre : <strong>${centre}</strong> &nbsp;|&nbsp; Imprimé le : ${date}</div>
+      <table>
+        <thead><tr><th>#</th><th>N° Acte</th><th>Nature</th><th>Individu</th><th>Date événement</th><th>Statut</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="footer">Total : ${actes.length} actes</div>
+      </body></html>`;
+    const w = window.open('', '_blank', 'width=920,height=700');
+    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 400); }
+  }
+
+  imprimerUnActe(a: Acte) {
+    const centre = this.auth.agent()?.centre_nom ?? '';
+    const date = new Date().toLocaleDateString('fr-FR');
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Acte ${a.numero_national}</title>
+      <style>
+        body{font-family:Arial,sans-serif;margin:40px;font-size:13px}
+        h1,h2,h3{text-align:center;margin:4px 0}
+        h1{font-size:16px} h2{font-size:13px;font-weight:normal;color:#555}
+        .sep{border-top:2px solid #009A44;margin:14px 0}
+        .row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee}
+        .lbl{color:#777;font-size:12px} .val{font-weight:600}
+        .footer{margin-top:30px;font-size:10px;color:#aaa;text-align:center}
+        .badge{padding:2px 10px;border-radius:10px;font-weight:600;font-size:11px;display:inline-block}
+        .naissance{background:#e8f5e9;color:#2e7d32}
+        .mariage{background:#f3e5f5;color:#6a1b9a}
+        .deces{background:#eee;color:#333}
+      </style></head><body>
+      <h1>REPUBLIQUE DE CÔTE D'IVOIRE</h1>
+      <h2>DIRECTION GÉNÉRALE DE L'ÉTAT CIVIL</h2>
+      <h3 style="margin-top:8px">Acte de ${a.nature_display ?? a.nature}</h3>
+      <div class="sep"></div>
+      <div class="row"><span class="lbl">Numéro d'acte</span><span class="val">${a.numero_national ?? ''}</span></div>
+      <div class="row"><span class="lbl">Nature</span><span class="val"><span class="badge ${(a.nature ?? '').toLowerCase()}">${a.nature_display ?? a.nature}</span></span></div>
+      <div class="row"><span class="lbl">Individu</span><span class="val">${a.individu_nom ?? ''}</span></div>
+      <div class="row"><span class="lbl">Date de l'événement</span><span class="val">${a.date_evenement ? new Date(a.date_evenement).toLocaleDateString('fr-FR') : ''}</span></div>
+      <div class="row"><span class="lbl">Centre</span><span class="val">${centre}</span></div>
+      <div class="row"><span class="lbl">Statut</span><span class="val">${a.statut_display ?? a.statut}</span></div>
+      <div class="footer">Imprimé le ${date} — Système d'Information État Civil CI</div>
+      </body></html>`;
+    const w = window.open('', '_blank', 'width=700,height=600');
+    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 400); }
+  }
+
+  imprimerRapport() {
+    const k = this.kpi();
+    const scope = this.isAgent() ? (this.auth.agent()?.centre_nom ?? '') : 'Vue Nationale — Tous les centres';
+    const date = new Date().toLocaleDateString('fr-FR');
+    const tx = this.tauxValidation();
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Rapport — ${scope}</title>
+      <style>
+        body{font-family:Arial,sans-serif;margin:40px;font-size:13px}
+        h1,h2{text-align:center;margin:4px 0}
+        h1{font-size:16px} h2{font-size:13px;font-weight:normal;color:#555}
+        .sub{text-align:center;font-size:12px;color:#777;border-bottom:2px solid #009A44;padding-bottom:10px;margin-bottom:24px}
+        .section{margin-bottom:22px}
+        .section h3{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#009A44;border-bottom:1px solid #ddd;padding-bottom:4px;margin-bottom:10px}
+        table{width:100%;border-collapse:collapse}
+        th{background:#f5f5f5;padding:7px 10px;text-align:left;font-weight:600;font-size:11px;border-bottom:2px solid #ddd}
+        td{padding:6px 10px;border-bottom:1px solid #eee}
+        .right{text-align:right;font-weight:700;color:#009A44}
+        .footer{margin-top:40px;font-size:10px;color:#aaa;text-align:center}
+      </style></head><body>
+      <h1>REPUBLIQUE DE CÔTE D'IVOIRE</h1>
+      <h2>DIRECTION GÉNÉRALE DE L'ÉTAT CIVIL</h2>
+      <div class="sub"><strong>Rapport de Synthèse</strong><br>${scope}<br>Imprimé le : ${date}</div>
+      <div class="section">
+        <h3>Actes enregistrés</h3>
+        <table>
+          <tr><th>Indicateur</th><th>Valeur</th></tr>
+          <tr><td>Total actes</td><td class="right">${k?.total_actes ?? 0}</td></tr>
+          <tr><td>Actes de naissance</td><td class="right">${k?.actes_naissance ?? 0}</td></tr>
+          <tr><td>Actes de mariage</td><td class="right">${k?.actes_mariage ?? 0}</td></tr>
+          <tr><td>Actes de décès</td><td class="right">${k?.actes_deces ?? 0}</td></tr>
+          <tr><td>Actes validés</td><td class="right">${k?.actes_valides ?? 0}</td></tr>
+          <tr><td>Actes en brouillon</td><td class="right">${k?.actes_brouillon ?? 0}</td></tr>
+          <tr><td>Taux de validation</td><td class="right">${tx}%</td></tr>
+        </table>
+      </div>
+      <div class="section">
+        <h3>Individus &amp; paiements</h3>
+        <table>
+          <tr><th>Indicateur</th><th>Valeur</th></tr>
+          <tr><td>Total individus</td><td class="right">${k?.total_individus ?? 0}</td></tr>
+          <tr><td>Individus décédés</td><td class="right">${k?.individus_deces ?? 0}</td></tr>
+          <tr><td>Total recettes (FCFA)</td><td class="right">${(k?.total_recettes ?? 0).toLocaleString('fr-FR')}</td></tr>
+          <tr><td>Nombre de paiements</td><td class="right">${k?.nb_paiements ?? 0}</td></tr>
+          <tr><td>Notifications en attente</td><td class="right">${k?.notifs_attente ?? 0}</td></tr>
+        </table>
+      </div>
+      <div class="footer">Document généré automatiquement — Système d'Information État Civil CI</div>
+      </body></html>`;
+    const w = window.open('', '_blank', 'width=800,height=700');
+    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 400); }
+  }
+
   private drawAll() {
     this.drawEvolution();
     this.drawNature();
-    this.drawCentres();
+    if (!this.isAgent()) this.drawCentres();
     this.drawCanal();
     this.drawMoyen();
     this.drawGenre();

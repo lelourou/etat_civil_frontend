@@ -1,4 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { formatApiError } from '../../core/utils/api-error.utils';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -158,7 +159,7 @@ export class UtilisateurFormComponent implements OnInit {
       next: () => this.router.navigate(['/utilisateurs']),
       error: (e) => {
         this.saving.set(false);
-        this.erreur.set(JSON.stringify(e.error));
+        this.erreur.set(formatApiError(e.error));
       },
     });
   }

@@ -1,4 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { formatApiError } from '../../core/utils/api-error.utils';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -371,7 +372,7 @@ export class CentreFormComponent implements OnInit {
       },
       error: e => {
         this.savingVillage.set(false);
-        this.snack.open('Erreur : ' + JSON.stringify(e.error), 'Fermer', { duration: 5000 });
+        this.snack.open(formatApiError(e.error), 'Fermer', { duration: 5000 });
       },
     });
   }
@@ -388,7 +389,7 @@ export class CentreFormComponent implements OnInit {
       },
       error: e => {
         this.retirantId.set(null);
-        this.snack.open('Erreur : ' + JSON.stringify(e.error), 'Fermer', { duration: 5000 });
+        this.snack.open(formatApiError(e.error), 'Fermer', { duration: 5000 });
       },
     });
   }

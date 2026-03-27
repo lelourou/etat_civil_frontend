@@ -1,4 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { formatApiError } from '../../core/utils/api-error.utils';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -231,8 +232,7 @@ export class IndividuFormComponent implements OnInit {
       },
       error: (e) => {
         this.loading.set(false);
-        const msg = e.error?.detail || JSON.stringify(e.error) || 'Erreur lors de l\'enregistrement';
-        this.snack.open(msg, 'Fermer', { duration: 5000, panelClass: 'snack-error' });
+        this.snack.open(formatApiError(e.error), 'Fermer', { duration: 5000, panelClass: 'snack-error' });
       },
     });
   }

@@ -1,0 +1,1 @@
+import"./chunk-7CGTOI24.js";var o=[{path:"",loadComponent:()=>import("./chunk-5EOVPAE7.js").then(t=>t.ActesListComponent)},{path:"nouveau",loadComponent:()=>import("./chunk-CLI2EVAQ.js").then(t=>t.ActeFormComponent)},{path:":id",loadComponent:()=>import("./chunk-O7VWT4TC.js").then(t=>t.ActeDetailComponent)}];export{o as actesRoutes};

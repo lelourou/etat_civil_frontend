@@ -1,0 +1,1 @@
+import"./chunk-7CGTOI24.js";var n=[{path:"",loadComponent:()=>import("./chunk-5KVJ4AQB.js").then(o=>o.IndividusListComponent)},{path:"nouveau",loadComponent:()=>import("./chunk-DF5UNG5A.js").then(o=>o.IndividuFormComponent)},{path:":id",loadComponent:()=>import("./chunk-N2HAQO3T.js").then(o=>o.IndividuDetailComponent)}];export{n as individusRoutes};

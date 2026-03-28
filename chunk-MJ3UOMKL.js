@@ -1,0 +1,1 @@
+function s(e){if(!e)return"Une erreur est survenue.";if(typeof e=="string")return e;let r=[],n=t=>{if(typeof t=="string"){r.push(t);return}if(Array.isArray(t)){t.forEach(i=>n(i));return}if(t&&typeof t=="object")for(let i of Object.values(t))n(i)};return e.detail&&typeof e.detail=="string"?e.detail:(n(e),r.length?r.join(" \u2014 "):"Une erreur est survenue.")}export{s as a};

@@ -18,6 +18,7 @@ import { MatStepperModule } from '@angular/material/stepper';
 import { ActesService } from '../../core/services/actes.service';
 import { IndividusService } from '../../core/services/individus.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CentresService, VillageCourant } from '../../core/services/centres.service';
 import { Individu } from '../../core/models/individu.models';
 import { Acte } from '../../core/models/acte.models';
 
@@ -75,18 +76,68 @@ import { Acte } from '../../core/models/acte.models';
               <mat-icon matSuffix style="color:#009A44">location_city</mat-icon>
             </mat-form-field>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Rechercher individu (NIN ou nom) *</mat-label>
-              <input matInput [value]="individu()?.nin || ''" readonly
-                     placeholder="Cliquez sur Rechercher">
-              <button mat-icon-button matSuffix (click)="ouvrirRechercheIndividu()" type="button">
-                <mat-icon>search</mat-icon>
-              </button>
-            </mat-form-field>
+            <!-- Village de naissance — obligatoire pour NAISSANCE uniquement -->
+            @if (step1.get('nature')?.value === 'NAISSANCE') {
+              <mat-form-field appearance="outline">
+                <mat-label>Village de naissance *</mat-label>
+                <mat-select formControlName="village">
+                  @for (v of villagesCentre(); track v.village) {
+                    <mat-option [value]="v.village">{{ v.village_nom }}</mat-option>
+                  }
+                </mat-select>
+                <mat-hint>Uniquement les villages rattachés à ce centre</mat-hint>
+                @if (step1.get('village')?.invalid && step1.get('village')?.touched) {
+                  <mat-error>Le village de naissance est obligatoire.</mat-error>
+                }
+              </mat-form-field>
+              @if (villagesCentre().length === 0) {
+                <div class="alert-warning">
+                  <mat-icon>warning</mat-icon>
+                  Aucun village rattaché à ce centre. Contactez l'administrateur.
+                </div>
+              }
+            }
+
+            <!-- Pour NAISSANCE : saisie directe de l'enfant -->
+            @if (step1.get('nature')?.value === 'NAISSANCE') {
+              <mat-form-field appearance="outline">
+                <mat-label>Nom de l'enfant *</mat-label>
+                <input matInput formControlName="enfant_nom">
+                @if (step1.get('enfant_nom')?.invalid && step1.get('enfant_nom')?.touched) {
+                  <mat-error>Le nom est obligatoire.</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Prénoms de l'enfant *</mat-label>
+                <input matInput formControlName="enfant_prenoms">
+                @if (step1.get('enfant_prenoms')?.invalid && step1.get('enfant_prenoms')?.touched) {
+                  <mat-error>Les prénoms sont obligatoires.</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Sexe *</mat-label>
+                <mat-select formControlName="enfant_sexe">
+                  <mat-option value="M">Masculin</mat-option>
+                  <mat-option value="F">Féminin</mat-option>
+                </mat-select>
+              </mat-form-field>
+            }
+
+            <!-- Pour MARIAGE / DÉCÈS : recherche individu existant -->
+            @if (step1.get('nature')?.value && step1.get('nature')?.value !== 'NAISSANCE') {
+              <mat-form-field appearance="outline">
+                <mat-label>Rechercher individu (NIN ou nom) *</mat-label>
+                <input matInput [value]="individu()?.nin || ''" readonly
+                       placeholder="Cliquez sur Rechercher">
+                <button mat-icon-button matSuffix (click)="ouvrirRechercheIndividu()" type="button">
+                  <mat-icon>search</mat-icon>
+                </button>
+              </mat-form-field>
+            }
 
           </div>
 
-          @if (individu()) {
+          @if (individu() && step1.get('nature')?.value !== 'NAISSANCE') {
             <div class="individu-card">
               <mat-icon>person</mat-icon>
               <div>
@@ -124,7 +175,7 @@ import { Acte } from '../../core/models/acte.models';
 
           <div class="step-actions">
             <button mat-raised-button color="primary" matStepperNext
-                    [disabled]="step1.invalid || !individu()">
+                    [disabled]="step1.invalid || (step1.get('nature')?.value !== 'NAISSANCE' && !individu())">
               Suivant <mat-icon>chevron_right</mat-icon>
             </button>
           </div>
@@ -160,45 +211,84 @@ import { Acte } from '../../core/models/acte.models';
                 </mat-form-field>
               </div>
               <mat-divider class="my-16"></mat-divider>
-              <h4>Père</h4>
-              <div class="form-grid">
-                <mat-form-field appearance="outline">
-                  <mat-label>Nom du père</mat-label>
-                  <input matInput formControlName="nom_pere">
+
+              <!-- ── PÈRE ─────────────────────────────────────────────── -->
+              <h4>Père <span class="hint-required">* Recherche par NIN obligatoire</span></h4>
+              <div class="nin-search-row">
+                <mat-form-field appearance="outline" class="nin-field">
+                  <mat-label>NIN du père *</mat-label>
+                  <input matInput [(ngModel)]="ninPere" [ngModelOptions]="{standalone:true}"
+                         placeholder="ex: CI2005XXXXXXXX" (keyup.enter)="rechercherParentParNin('pere')">
+                  <button mat-icon-button matSuffix type="button"
+                          (click)="rechercherParentParNin('pere')" matTooltip="Rechercher">
+                    <mat-icon>search</mat-icon>
+                  </button>
                 </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Prénoms du père</mat-label>
-                  <input matInput formControlName="prenoms_pere">
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Nationalité père</mat-label>
-                  <input matInput formControlName="nationalite_pere" placeholder="CI">
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Profession père</mat-label>
-                  <input matInput formControlName="profession_pere">
-                </mat-form-field>
+                @if (pere()) {
+                  <button mat-icon-button color="warn" type="button"
+                          (click)="reinitialiserParent('pere')" matTooltip="Effacer">
+                    <mat-icon>clear</mat-icon>
+                  </button>
+                }
               </div>
+              @if (erreurNinPere()) {
+                <p class="nin-error"><mat-icon>error_outline</mat-icon> {{ erreurNinPere() }}</p>
+              }
+              @if (pere()) {
+                <div class="parent-card">
+                  <mat-icon>man</mat-icon>
+                  <div>
+                    <strong>{{ pere()!.nom }} {{ pere()!.prenoms }}</strong>
+                    <small>NIN : {{ pere()!.nin }}</small>
+                  </div>
+                </div>
+                <div class="form-grid" style="margin-top:8px">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Profession père</mat-label>
+                    <input matInput formControlName="profession_pere">
+                  </mat-form-field>
+                </div>
+              }
+
               <mat-divider class="my-16"></mat-divider>
-              <h4>Mère</h4>
-              <div class="form-grid">
-                <mat-form-field appearance="outline">
-                  <mat-label>Nom de la mère</mat-label>
-                  <input matInput formControlName="nom_mere">
+
+              <!-- ── MÈRE ─────────────────────────────────────────────── -->
+              <h4>Mère <span class="hint-required">* Recherche par NIN obligatoire</span></h4>
+              <div class="nin-search-row">
+                <mat-form-field appearance="outline" class="nin-field">
+                  <mat-label>NIN de la mère *</mat-label>
+                  <input matInput [(ngModel)]="ninMere" [ngModelOptions]="{standalone:true}"
+                         placeholder="ex: CI2000XXXXXXXX" (keyup.enter)="rechercherParentParNin('mere')">
+                  <button mat-icon-button matSuffix type="button"
+                          (click)="rechercherParentParNin('mere')" matTooltip="Rechercher">
+                    <mat-icon>search</mat-icon>
+                  </button>
                 </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Prénoms de la mère</mat-label>
-                  <input matInput formControlName="prenoms_mere">
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Nationalité mère</mat-label>
-                  <input matInput formControlName="nationalite_mere" placeholder="CI">
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Profession mère</mat-label>
-                  <input matInput formControlName="profession_mere">
-                </mat-form-field>
+                @if (mere()) {
+                  <button mat-icon-button color="warn" type="button"
+                          (click)="reinitialiserParent('mere')" matTooltip="Effacer">
+                    <mat-icon>clear</mat-icon>
+                  </button>
+                }
               </div>
+              @if (erreurNinMere()) {
+                <p class="nin-error"><mat-icon>error_outline</mat-icon> {{ erreurNinMere() }}</p>
+              }
+              @if (mere()) {
+                <div class="parent-card mere">
+                  <mat-icon>woman</mat-icon>
+                  <div>
+                    <strong>{{ mere()!.nom }} {{ mere()!.prenoms }}</strong>
+                    <small>NIN : {{ mere()!.nin }}</small>
+                  </div>
+                </div>
+                <div class="form-grid" style="margin-top:8px">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Profession mère</mat-label>
+                    <input matInput formControlName="profession_mere">
+                  </mat-form-field>
+                </div>
+              }
               <mat-divider class="my-16"></mat-divider>
               <h4>Déclarant</h4>
               <div class="form-grid">
@@ -501,6 +591,21 @@ import { Acte } from '../../core/models/acte.models';
     .acte-card div { flex:1; display:flex; flex-direction:column; }
     .acte-card small { color:#555; font-size:12px; }
     .no-result { padding:8px 12px; color:#999; font-size:13px; }
+    .alert-warning { display:flex; align-items:center; gap:8px; padding:10px 14px;
+                     background:#fff3e0; color:#e65100; border-radius:6px;
+                     font-size:13px; margin:4px 0; }
+    .alert-warning mat-icon { font-size:18px; width:18px; height:18px; }
+    .hint-required { font-size:11px; color:#e53935; font-weight:400; margin-left:8px; }
+    .nin-search-row { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+    .nin-field { flex:1; max-width:340px; }
+    .parent-card { display:flex; align-items:center; gap:12px; padding:10px 16px;
+                   background:#e3f2fd; border-radius:8px; margin-bottom:8px; }
+    .parent-card.mere { background:#fce4ec; }
+    .parent-card div { flex:1; display:flex; flex-direction:column; }
+    .parent-card small { color:#555; font-size:12px; }
+    .nin-error { display:flex; align-items:center; gap:6px; color:#e53935;
+                 font-size:13px; margin:4px 0; }
+    .nin-error mat-icon { font-size:16px; width:16px; height:16px; }
   `],
 })
 export class ActeFormComponent implements OnInit, OnDestroy {
@@ -511,6 +616,18 @@ export class ActeFormComponent implements OnInit, OnDestroy {
   rechercheOuverte   = signal(false);
   resultatsRecherche = signal<Individu[]>([]);
   termeRecherche     = '';
+
+  // Villages rattachés au centre (pour acte de naissance)
+  villagesCentre = signal<VillageCourant[]>([]);
+
+  // Recherche parents par NIN
+  pere          = signal<Individu | null>(null);
+  mere          = signal<Individu | null>(null);
+  ninPere       = '';
+  ninMere       = '';
+  erreurNinPere = signal('');
+  erreurNinMere = signal('');
+
 
   // Épouse (individu) pour acte de mariage
   epouse                 = signal<Individu | null>(null);
@@ -532,6 +649,7 @@ export class ActeFormComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private svc: ActesService,
     private individusSvc: IndividusService,
+    private centresSvc: CentresService,
     public auth: AuthService,
     private snack: MatSnackBar,
     private router: Router,
@@ -547,12 +665,49 @@ export class ActeFormComponent implements OnInit, OnDestroy {
     // centreId depuis JWT (synchrone) ou agent() chargé via /me/ (asynchrone)
     const centreId = this.auth.centreId ?? this.auth.agent()?.centre ?? '';
 
+    // Charger les villages du centre pour la règle de naissance
+    if (centreId) {
+      this.centresSvc.villagescourants(centreId).subscribe({
+        next: v => this.villagesCentre.set(v),
+        error: () => {},
+      });
+    }
+
     this.step1 = this.fb.group({
-      nature:         ['', Validators.required],
-      date_evenement: ['', Validators.required],
-      centre:         [centreId, Validators.required],
-      individu:       ['', Validators.required],
-      observations:   [''],
+      nature:          ['', Validators.required],
+      date_evenement:  ['', Validators.required],
+      centre:          [centreId, Validators.required],
+      individu:        [''],
+      village:         [''],
+      observations:    [''],
+      enfant_nom:      [''],
+      enfant_prenoms:  [''],
+      enfant_sexe:     [''],
+    });
+
+    // Validators dynamiques selon nature
+    this.step1.get('nature')!.valueChanges.subscribe(nature => {
+      const villageCtrl  = this.step1.get('village')!;
+      const individuCtrl = this.step1.get('individu')!;
+      const nomCtrl      = this.step1.get('enfant_nom')!;
+      const prenomsCtrl  = this.step1.get('enfant_prenoms')!;
+      const sexeCtrl     = this.step1.get('enfant_sexe')!;
+
+      if (nature === 'NAISSANCE') {
+        villageCtrl.setValidators(Validators.required);
+        individuCtrl.clearValidators(); individuCtrl.setValue('');
+        nomCtrl.setValidators(Validators.required);
+        prenomsCtrl.setValidators(Validators.required);
+        sexeCtrl.setValidators(Validators.required);
+      } else {
+        villageCtrl.clearValidators(); villageCtrl.setValue('');
+        individuCtrl.setValidators(Validators.required);
+        nomCtrl.clearValidators(); nomCtrl.setValue('');
+        prenomsCtrl.clearValidators(); prenomsCtrl.setValue('');
+        sexeCtrl.clearValidators(); sexeCtrl.setValue('');
+      }
+      [villageCtrl, individuCtrl, nomCtrl, prenomsCtrl, sexeCtrl]
+        .forEach(c => c.updateValueAndValidity());
     });
 
     // Fallback : si le JWT ne contient pas encore centre_id,
@@ -616,7 +771,38 @@ export class ActeFormComponent implements OnInit, OnDestroy {
     this.resultatsRecherche.set([]);
   }
 
-  // ── Recherche actes de naissance époux / épouse ────────────────────────
+  // ── Recherche parents par NIN ─────────────────────────────────────────
+
+  rechercherParentParNin(role: 'pere' | 'mere') {
+    const nin    = role === 'pere' ? this.ninPere.trim() : this.ninMere.trim();
+    const errSig = role === 'pere' ? this.erreurNinPere : this.erreurNinMere;
+    if (!nin) { errSig.set('Saisissez un NIN avant de rechercher.'); return; }
+    errSig.set('');
+    this.individusSvc.liste({ search: nin, page_size: '5' }).subscribe({
+      next: r => {
+        const found = r.results.find(i => i.nin === nin) ?? r.results[0];
+        if (!found) { errSig.set(`Aucun individu trouvé pour le NIN : ${nin}`); return; }
+        if (role === 'pere') {
+          this.pere.set(found); this.erreurNinPere.set('');
+          this.step2.patchValue({ nom_pere: found.nom, prenoms_pere: found.prenoms, nationalite_pere: found.nationalite || 'CI' });
+        } else {
+          this.mere.set(found); this.erreurNinMere.set('');
+          this.step2.patchValue({ nom_mere: found.nom, prenoms_mere: found.prenoms, nationalite_mere: found.nationalite || 'CI' });
+        }
+      },
+      error: () => errSig.set('Erreur lors de la recherche.'),
+    });
+  }
+
+  reinitialiserParent(role: 'pere' | 'mere') {
+    if (role === 'pere') {
+      this.pere.set(null); this.ninPere = ''; this.erreurNinPere.set('');
+      this.step2.patchValue({ nom_pere: '', prenoms_pere: '', nationalite_pere: 'CI', profession_pere: '' });
+    } else {
+      this.mere.set(null); this.ninMere = ''; this.erreurNinMere.set('');
+      this.step2.patchValue({ nom_mere: '', prenoms_mere: '', nationalite_mere: 'CI', profession_mere: '' });
+    }
+  }
 
   // ── Sélection épouse (individu FK) ────────────────────────────────────
 
@@ -681,27 +867,60 @@ export class ActeFormComponent implements OnInit, OnDestroy {
       this.snack.open('Veuillez sélectionner l\'épouse avant d\'enregistrer.', 'Fermer', { duration: 4000 });
       return;
     }
+    if (nature === 'NAISSANCE' && (!this.pere() || !this.mere())) {
+      this.snack.open('Le père et la mère doivent être recherchés par NIN.', 'Fermer', { duration: 4000 });
+      return;
+    }
 
     this.loading.set(true);
-    const v1     = { ...this.step1.value };
-    const v2     = this.step2.value;
+    const v1 = { ...this.step1.value };
+    const v2 = this.step2.value;
 
     if (v1.date_evenement instanceof Date) {
       const d = v1.date_evenement;
       v1.date_evenement = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
-    const payload: any = { ...v1 };
-    if (nature === 'NAISSANCE') payload['detail_naissance'] = v2;
-    if (nature === 'MARIAGE') {
-      payload['detail_mariage'] = {
-        ...v2,
-        epoux:  this.individu()?.id,   // individu étape 1 = époux
-        epouse: this.epouse()?.id,     // sélectionné en étape 2
+    if (nature === 'NAISSANCE') {
+      // Créer l'individu (enfant) puis l'acte
+      const enfantData = {
+        nom:            v1.enfant_nom,
+        prenoms:        v1.enfant_prenoms,
+        sexe:           v1.enfant_sexe,
+        date_naissance: v1.date_evenement,
+        lieu_naissance_village: v1.village || null,
+        nationalite:    'CI',
       };
+      this.individusSvc.creer(enfantData).subscribe({
+        next: (enfant) => {
+          const payload: any = {
+            nature:         v1.nature,
+            date_evenement: v1.date_evenement,
+            centre:         v1.centre,
+            village:        v1.village,
+            individu:       enfant.id,
+            observations:   v1.observations,
+            detail_naissance: v2,
+          };
+          this._soumettreActe(payload);
+        },
+        error: (e) => {
+          this.loading.set(false);
+          this.snack.open('Erreur création enfant : ' + formatApiError(e.error), 'Fermer', { duration: 6000 });
+        },
+      });
+    } else {
+      const payload: any = { ...v1 };
+      delete payload['enfant_nom']; delete payload['enfant_prenoms']; delete payload['enfant_sexe'];
+      if (nature === 'MARIAGE') {
+        payload['detail_mariage'] = { ...v2, epoux: this.individu()?.id, epouse: this.epouse()?.id };
+      }
+      if (nature === 'DECES') payload['detail_deces'] = v2;
+      this._soumettreActe(payload);
     }
-    if (nature === 'DECES')     payload['detail_deces']     = v2;
+  }
 
+  private _soumettreActe(payload: any) {
     this.svc.creer(payload).subscribe({
       next: (acte) => {
         this.loading.set(false);

@@ -252,13 +252,35 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
           </mat-card>
           }
 
+          <div class="section-titre">Analyse des paiements</div>
+          <div style="display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap">
+            <mat-card style="flex:1;min-width:260px">
+              <mat-card-header>
+                <mat-card-title>Demandes par canal</mat-card-title>
+                <mat-card-subtitle>Guichet vs En ligne</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content><canvas id="bi-canal"></canvas></mat-card-content>
+            </mat-card>
+            <mat-card style="flex:1;min-width:260px">
+              <mat-card-header>
+                <mat-card-title>Paiements par moyen</mat-card-title>
+                <mat-card-subtitle>Espèces vs Mobile Money</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content><canvas id="bi-moyen"></canvas></mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- ── Recettes par centre — avec pagination ── -->
           <mat-card style="margin-bottom:24px">
-            <mat-card-header><mat-card-title>Recettes par centre (FCFA)</mat-card-title></mat-card-header>
+            <mat-card-header>
+              <mat-card-title>Recettes par centre (FCFA)</mat-card-title>
+              <mat-card-subtitle>{{ recettes().length }} centres au total</mat-card-subtitle>
+            </mat-card-header>
             <mat-card-content>
-              <table mat-table [dataSource]="recettes()" style="width:100%">
+              <table mat-table [dataSource]="recettesPage()" style="width:100%">
                 <ng-container matColumnDef="rang">
                   <th mat-header-cell *matHeaderCellDef>#</th>
-                  <td mat-cell *matCellDef="let r; let i = index">{{ i+1 }}</td>
+                  <td mat-cell *matCellDef="let r; let i = index">{{ recPageIndex() * recPageSize + i + 1 }}</td>
                 </ng-container>
                 <ng-container matColumnDef="centre">
                   <th mat-header-cell *matHeaderCellDef>Centre</th>
@@ -285,26 +307,45 @@ const SL: Record<string, string> = { M: 'Masculin', F: 'Féminin' };
                 <tr mat-header-row *matHeaderRowDef="recCols"></tr>
                 <tr mat-row *matRowDef="let row; columns: recCols;"></tr>
               </table>
+
+              <!-- Pagination -->
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0 4px;flex-wrap:wrap;gap:8px">
+                <span style="font-size:13px;color:#555">
+                  Lignes par page :
+                  @for (ps of [5,10,20]; track ps) {
+                    <button mat-button [style.font-weight]="recPageSize===ps?'700':'400'"
+                            [style.color]="recPageSize===ps?'#009A44':'#555'"
+                            (click)="setRecPageSize(ps)" style="min-width:36px;padding:0 6px">{{ ps }}</button>
+                  }
+                </span>
+                <span style="font-size:13px;color:#555">
+                  {{ recPageIndex() * recPageSize + 1 }}–{{ recPageEnd() }} sur {{ recettes().length }}
+                </span>
+                <div style="display:flex;gap:4px">
+                  <button mat-icon-button [disabled]="recPageIndex()===0"
+                          (click)="recPageIndex.set(0)" matTooltip="Première page">
+                    <mat-icon>first_page</mat-icon>
+                  </button>
+                  <button mat-icon-button [disabled]="recPageIndex()===0"
+                          (click)="recPrev()" matTooltip="Page précédente">
+                    <mat-icon>chevron_left</mat-icon>
+                  </button>
+                  <span style="align-self:center;font-size:13px;padding:0 8px">
+                    Page {{ recPageIndex()+1 }} / {{ recTotalPages() }}
+                  </span>
+                  <button mat-icon-button [disabled]="recPageIndex()>=recTotalPages()-1"
+                          (click)="recNext()" matTooltip="Page suivante">
+                    <mat-icon>chevron_right</mat-icon>
+                  </button>
+                  <button mat-icon-button [disabled]="recPageIndex()>=recTotalPages()-1"
+                          (click)="recPageIndex.set(recTotalPages()-1)" matTooltip="Dernière page">
+                    <mat-icon>last_page</mat-icon>
+                  </button>
+                </div>
+              </div>
+
             </mat-card-content>
           </mat-card>
-
-          <div class="section-titre">Analyse des paiements</div>
-          <div style="display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap">
-            <mat-card style="flex:1;min-width:260px">
-              <mat-card-header>
-                <mat-card-title>Demandes par canal</mat-card-title>
-                <mat-card-subtitle>Guichet vs En ligne</mat-card-subtitle>
-              </mat-card-header>
-              <mat-card-content><canvas id="bi-canal"></canvas></mat-card-content>
-            </mat-card>
-            <mat-card style="flex:1;min-width:260px">
-              <mat-card-header>
-                <mat-card-title>Paiements par moyen</mat-card-title>
-                <mat-card-subtitle>Espèces vs Mobile Money</mat-card-subtitle>
-              </mat-card-header>
-              <mat-card-content><canvas id="bi-moyen"></canvas></mat-card-content>
-            </mat-card>
-          </div>
 
         </div>
       }
@@ -625,6 +666,18 @@ export class RapportsBiComponent implements OnInit, AfterViewInit, OnDestroy {
   loadingImpr      = signal(false);
   kpi              = signal<SyntheseKPI | null>(null);
   recettes         = signal<RecettesCentre[]>([]);
+  recPageIndex     = signal(0);
+  recPageSize      = 10;
+  recettesPage     = () => {
+    const start = this.recPageIndex() * this.recPageSize;
+    return this.recettes().slice(start, start + this.recPageSize);
+  };
+  recTotalPages    = () => Math.max(1, Math.ceil(this.recettes().length / this.recPageSize));
+  recPageEnd       = () => Math.min((this.recPageIndex() + 1) * this.recPageSize, this.recettes().length);
+  setRecPageSize(ps: number) { this.recPageSize = ps; this.recPageIndex.set(0); }
+  recPrev() { this.recPageIndex.update(p => p - 1); }
+  recNext() { this.recPageIndex.update(p => p + 1); }
+
   actes            = signal<Acte[]>([]);
   actesImpr        = signal<Acte[]>([]);
   recCols          = ['rang', 'centre', 'type', 'nb', 'total'];

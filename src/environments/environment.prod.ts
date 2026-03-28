@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: '/api/v1',   // chemin relatif — nginx proxie /api/ → backend:8000
+  apiUrl: 'https://etat-civil-backend.onrender.com/api/v1',  // ← mettre l'URL Render ici
 };

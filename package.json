@@ -7,6 +7,7 @@
     "start": "node_modules/.bin/ng serve --open",
     "build": "node_modules/.bin/ng build",
     "build:prod": "node_modules/.bin/ng build --configuration production",
+    "deploy:gh": "node_modules/.bin/ng build --configuration production --base-href /etat_civil_frontend/ && npx angular-cli-ghpages --dir=dist/etat-civil-frontend/browser",
     "test": "node_modules/.bin/ng test",
     "lint": "node_modules/.bin/ng lint"
   },
@@ -33,6 +34,7 @@
     "@angular/compiler-cli": "~19.0.0",
     "@types/jasmine": "~5.1.0",
     "@types/node": "^18.18.0",
+    "angular-cli-ghpages": "^3.0.2",
     "jasmine-core": "~5.4.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",

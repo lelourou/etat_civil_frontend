@@ -1,1 +1,0 @@
-import"./chunk-7CGTOI24.js";var o=[{path:"",loadComponent:()=>import("./chunk-I7JBHV4Z.js").then(t=>t.UtilisateursListComponent)},{path:"nouveau",loadComponent:()=>import("./chunk-CXWI3WFE.js").then(t=>t.UtilisateurFormComponent)},{path:":id/modifier",loadComponent:()=>import("./chunk-CXWI3WFE.js").then(t=>t.UtilisateurFormComponent)}];export{o as utilisateursRoutes};
